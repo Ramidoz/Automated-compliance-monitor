@@ -64,6 +64,11 @@ async def scan(
         summary=result.summary,
         findings=findings_payload,
         document_excerpt=text[:4000],
+        agent_transcript=result.transcript,
+        agent_iterations=result.iterations,
+        input_tokens=result.input_tokens,
+        output_tokens=result.output_tokens,
+        cached_tokens=result.cached_tokens,
     )
     session.add(scan_row)
     await session.commit()
@@ -82,4 +87,9 @@ async def scan(
         "used_claude": result.used_claude,
         "cache_hit": result.cache_hit,
         "document_excerpt": scan_row.document_excerpt,
+        "agent_transcript": result.transcript,
+        "agent_iterations": result.iterations,
+        "input_tokens": result.input_tokens,
+        "output_tokens": result.output_tokens,
+        "cached_tokens": result.cached_tokens,
     }

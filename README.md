@@ -1,15 +1,147 @@
 # Automated Compliance Monitor
 
-Upload a policy document. Get back a risk-weighted score and a punch list of
-specific gaps against **HIPAA**, **GDPR**, **PCI-DSS**, and **SOC 2** —
-each with the regulatory citation and a one-sentence remediation.
+Upload a policy document. A multi-turn **AI agent** (Claude Sonnet 4.6) plus a
+deterministic rules engine score it against **HIPAA**, **GDPR**, **PCI-DSS**,
+and **SOC 2**, flag specific gaps with regulatory citations, suggest fixes,
+and let you re-scan over time to watch findings open and close.
 
-Built for small businesses (clinics, EU-facing shops, SaaS startups) that need
-to spot compliance exposure before regulators or auditors do.
+> **For data scientists / ML engineers**: this repo is a portfolio-grade
+> demonstration of **(1)** building a Claude tool-using agent loop, **(2)**
+> evaluating LLM output with a labeled eval harness, and **(3)** shipping it
+> as a deployable open-source product.
+
+[![CI](https://github.com/Ramidoz/automated-compliance-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/Ramidoz/automated-compliance-monitor/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## What it does
+## One step
+
+```bash
+git clone https://github.com/Ramidoz/automated-compliance-monitor && cd automated-compliance-monitor
+./run.sh
+```
+
+That's it. The launcher uses `docker compose` if available, otherwise falls
+back to a native Python venv + `npm`. Defaults to `USE_CLAUDE=false` so it
+runs out-of-the-box without an API key (rules engine + PII scanner only).
+
+To enable the AI agent:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-... USE_CLAUDE=true
+./run.sh
+```
+
+Then open <http://localhost:3000>.
+
+Other one-liners:
+
+```bash
+./run.sh test    # backend pytest + frontend type-check + production build
+./run.sh eval    # run the eval harness against labeled cases
+./run.sh demo    # headless: scan both fixtures, write demo/results/*.json
+./run.sh stop    # stop docker compose / native processes
+```
+
+---
+
+## What the AI agent actually does
+
+The Claude integration is **not** a single API call. It's a tool-using agent
+loop that you can watch step-by-step in the UI:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  Turn 1 → search_document("breach")                                │
+│           ← 3 matches, including "as soon as practicable"          │
+│  Turn 2 → search_regulation_index("GDPR", "breach 72 hours")       │
+│           ← GDPR-006: Breach Notification Timeline (72 hours)      │
+│  Turn 2 → get_rule_details("GDPR", "GDPR-006")                     │
+│           ← citation, remediation, required keywords               │
+│  Turn 3 → report_finding("GDPR", "AI-GDPR-001", "Vague…", …)       │
+│  Turn 3 → finalize("Posture is weak on breach response timing.")   │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+**Tools available to the agent** (`backend/app/core/agent_tools.py`):
+
+| Tool | Purpose |
+|---|---|
+| `search_regulation_index` | Fuzzy-search loaded rules by title/citation/keyword |
+| `get_rule_details`        | Full rule metadata incl. remediation |
+| `search_document`         | Locate a phrase in the policy with surrounding context |
+| `read_document_excerpt`   | Slice the policy by character offset |
+| `report_finding`          | Record a semantic gap (accumulates) |
+| `finalize`                | End the loop with an executive summary |
+
+**The transcript is persisted with each scan** and rendered in a collapsible
+panel showing every assistant turn, tool call (color-coded), tool result, and
+token / cache-hit metrics. This is the artifact that makes the agent visible
+to a reviewer instead of buried in a pipeline.
+
+**Implementation notes:**
+
+- Multi-turn loop (max 8 iterations) with full tool-result feedback.
+- **Prompt caching** on the framework-rules system block (1h ephemeral
+  breakpoint) → ~90% input-token discount on repeat scans.
+- **Extended thinking** is opt-in via `USE_THINKING=true` — off by default to
+  keep demo latency low.
+- Every turn captured into a `TranscriptStep` list (`thinking | text |
+  tool_use | tool_result`) and persisted as JSON on the `Scan` row.
+- Agent disabled cleanly when `USE_CLAUDE=false` — pipeline still produces
+  full keyword findings + risk score (offline-safe for CI / portfolio demos).
+
+---
+
+## Eval harness
+
+```bash
+./run.sh eval
+```
+
+```
+case                              P      R     F1  fp/fn
+----------------------------------------------------------------------
+hipaa_full_pass                1.00   1.00   1.00
+hipaa_missing_baa              1.00   1.00   1.00
+hipaa_pii_leak                 1.00   1.00   1.00
+gdpr_full_pass                 1.00   1.00   1.00
+gdpr_vague_consent             1.00   1.00   1.00
+pci_pan_unprotected            1.00   1.00   1.00
+soc2_no_change_management      1.00   1.00   1.00
+empty_doc                      1.00   1.00   1.00
+----------------------------------------------------------------------
+AVERAGE                        1.00   1.00   1.00
+```
+
+Eight labeled mini-policies in `backend/evals/cases.yaml`, each with the
+exhaustive set of `rule_id`s that should fail. The harness computes
+**precision**, **recall**, and **F1** per case and on average. CI fails the
+build if `--min-recall` (default 1.0) drops — so a regression in detection
+coverage is caught before merge.
+
+Building the harness surfaced two real precision bugs that would otherwise
+look like model errors:
+
+1. The keyword matcher used strict `\b...\b` boundaries, missing plurals
+   (`audit log` vs `audit logs`). Fix: allow `(?:s|es|ing|ed)?` on the final
+   word.
+2. The `retention_period` rule didn't accept the bare phrase `data retention
+   period`. Fix: expand the keyword list.
+
+Both fixes were driven by data, not vibes — that's the whole point of the
+eval.
+
+To eval the agent's semantic findings (requires API key):
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-... ./run.sh eval -- --with-agent
+```
+
+---
+
+## How it scores
 
 ```
             ┌──────────────┐    ┌───────────────────────┐    ┌─────────────────┐
@@ -21,19 +153,19 @@ PDF/DOCX -> │ Text extract │ -> │ 40+ deterministic     │ -> │ Risk sc
                                            ▼
                                 ┌───────────────────────┐
                                 │ Claude Sonnet 4.6     │
-                                │ semantic gap analysis │
-                                │ (prompt-cached rules) │
+                                │ multi-turn agent loop │
+                                │ (6 tools, transcript) │
                                 └───────────────────────┘
 ```
 
 | Layer | What it catches |
 |---|---|
-| **Rules engine** | Required clauses (e.g. "Notice of Privacy Practices", "72 hours", "BAA"), numeric obligations (60-day breach notice, quarterly scans, MFA on CDE), citations |
+| **Rules engine** | Required clauses (e.g. "Notice of Privacy Practices", "72 hours", "BAA"), numeric obligations (60-day breach notice, quarterly scans, MFA on CDE), with citations |
 | **PII scanner** | Emails, US SSNs, credit-card numbers (Luhn-validated), IBANs, phones, IPs, DOBs that should never appear in a policy doc |
-| **Claude semantic pass** | Vague language, missing operational detail, contradictions — gaps that keyword rules can't see. Returns strict JSON via tool-call. |
+| **Claude agent** | Vague language, missing operational detail, contradictions — gaps that keyword rules can't see, with full tool-call transcript |
 | **Risk scoring** | Severity-weighted (`critical=25, high=12, medium=6, low=2`); PII violations carry 1.5× weight |
 
-Demo delta on the bundled fixtures (Claude disabled for reproducibility):
+Demo delta on the bundled fixtures (offline, agent disabled):
 
 ```
 clinic_policy_weak.txt    risk=100.0  label=critical   42 failed of 42
@@ -42,61 +174,20 @@ saas_policy_strong.txt    risk= 19.4  label=moderate    8 failed of 41
 
 ---
 
-## Quickstart
+## Diff over time
 
-### Fastest path: docker-compose
+Scans share a `policy_name` (auto-derived from the filename, or set on
+upload). Re-scan a document and see what changed:
 
-```bash
-# (optional) export ANTHROPIC_API_KEY=sk-ant-... USE_CLAUDE=true
-docker compose up --build
-# frontend: http://localhost:3000   backend: http://localhost:8000/api/health
-```
+- **closed** — was failing, now passing
+- **opened** — was passing, now failing (regression)
+- **regressed** — still failing, severity got worse
+- **improved** — still failing, severity got better
+- **still_failing** — failing in both
+- **still_passing** — passing in both
 
-### 30-second demo (no API key needed)
-
-```bash
-./scripts/demo.sh   # boots backend, scans both fixtures, writes demo/results/*.json
-```
-
-Produces:
-
-| Fixture | Risk | Label | Findings | Failed |
-|---|---:|---|---:|---:|
-| `weak.json` | 100.0 | critical | 42 | 42 |
-| `strong.json` | 19.4 | moderate | 41 | 8 |
-
-Use `demo/results/*.json` as static portfolio artifacts.
-
-### 1. Backend (manual)
-
-```bash
-cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env       # paste your ANTHROPIC_API_KEY (or set USE_CLAUDE=false)
-uvicorn app.main:app --reload --port 8000
-```
-
-The first request creates `compliance.db` (SQLite). Hit `http://localhost:8000/api/health`.
-
-### 2. Frontend (manual)
-
-```bash
-cd frontend
-npm install
-npm run dev                # http://localhost:3000
-```
-
-Drop a PDF/DOCX/TXT on the home page. The dashboard shows the risk gauge,
-severity counts, per-framework findings, and the document excerpt.
-
-### 3. Try the bundled fixtures
-
-```bash
-curl -F 'frameworks=HIPAA,GDPR,PCI_DSS,SOC2' \
-     -F 'file=@backend/fixtures/clinic_policy_weak.txt' \
-     http://localhost:8000/api/scan | jq '.risk_score, .risk_label'
-```
+The compare page shows side-by-side evidence per finding, the risk-score
+delta, and tinted count cards.
 
 ---
 
@@ -106,24 +197,27 @@ curl -F 'frameworks=HIPAA,GDPR,PCI_DSS,SOC2' \
 
 | Var | Default | Notes |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | — | Required if `USE_CLAUDE=true` |
-| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Sonnet 4.6 is the recommended default — strong on this task without Opus pricing |
-| `USE_CLAUDE` | `true` | Set `false` for offline/CI runs (rules + PII only) |
-| `USE_THINKING` | `false` | Set `true` to enable extended thinking for deeper semantic analysis (higher latency/cost) |
+| `ANTHROPIC_API_KEY` | — | Required for the agent loop |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Sonnet 4.6 — strong on this task without Opus pricing |
+| `USE_CLAUDE` | `true` | Set `false` for offline runs (rules + PII only) |
+| `USE_THINKING` | `false` | Set `true` for extended thinking (higher latency / cost) |
 | `THINKING_BUDGET_TOKENS` | `2000` | Only used when `USE_THINKING=true` |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./compliance.db` | Swap for Postgres in prod |
 | `ALLOW_ORIGINS` | `http://localhost:3000` | Comma-separated CORS allow-list |
 
-### Why Sonnet 4.6, not Opus?
+---
 
-Compliance gap-spotting is a moderate-difficulty NLP task. Sonnet 4.6 nails it
-without thinking enabled, which keeps the demo snappy and the per-scan cost low.
-Prompt caching on the framework-rules system block (1h TTL) takes ~90% off input
-tokens for repeat scans — so a clinic running 50 scans/month pays for the rules
-once.
+## API
 
-Flip `USE_THINKING=true` if you want the model to deliberate harder; it's
-implemented and tested, just off by default.
+| Method | Path | Purpose |
+|---|---|---|
+| `POST` | `/api/scan` | multipart: `file`, `frameworks` (CSV), optional `policy_name` |
+| `GET`  | `/api/scans` | last 50 scans; `?policy_name=...` filters by policy |
+| `GET`  | `/api/scans/{id}` | full detail incl. `agent_transcript` and token metrics |
+| `GET`  | `/api/scans/{id}/versions` | other scans of the same policy |
+| `GET`  | `/api/scans/{id}/compare/{other_id}` | classified diff |
+| `GET`  | `/api/regulations` | available frameworks + rule counts |
+| `GET`  | `/api/health` | liveness |
 
 ---
 
@@ -136,64 +230,17 @@ Recommended split: **Vercel** for the frontend, **Fly.io** for the backend
 
 ```bash
 cd backend
-fly launch --no-deploy --copy-config              # creates the app, keeps fly.toml
+fly launch --no-deploy --copy-config
 fly volumes create compliance_data --region iad --size 1
-fly secrets set ANTHROPIC_API_KEY=sk-ant-...      \
-                ALLOW_ORIGINS=https://your-frontend.vercel.app
+fly secrets set ANTHROPIC_API_KEY=sk-ant-... ALLOW_ORIGINS=https://your-frontend.vercel.app
 fly deploy
 ```
 
-The included `fly.toml` mounts a 1 GB volume at `/data` so the SQLite DB
-persists across restarts, scales to zero when idle, and runs HTTPS-only
-health checks against `/api/health`.
-
 ### Frontend → Vercel
 
-1. Import the repo on Vercel and set the **root directory** to `frontend/`.
-2. Set the env var `NEXT_PUBLIC_API_BASE` to your Fly URL, e.g.
-   `https://compliance-monitor-backend.fly.dev/api`.
-3. Deploy. `lib/api.ts` reads `NEXT_PUBLIC_API_BASE` at build time and
-   calls the backend directly — the `next.config.mjs` rewrites are only
-   used in dev.
-
-### Anywhere with Docker
-
-Both services have multi-stage Dockerfiles producing slim runtime images
-(~150 MB backend, ~180 MB frontend with Next.js standalone output).
-`docker compose up` from the repo root starts both with healthcheck-gated
-startup ordering.
-
----
-
-## Diff over time
-
-Scans share a `policy_name` (auto-derived from the filename, or set manually
-on upload) so you can re-scan a document and see what changed:
-
-- **closed** — was failing, now passing
-- **opened** — was passing, now failing (regression)
-- **regressed** — still failing, severity got worse
-- **improved** — still failing, severity got better
-- **still_failing** — failing in both scans
-- **still_passing** — passing in both scans
-
-The compare page shows side-by-side evidence per finding, the risk-score delta,
-and section counts. Try it: scan `clinic_policy_weak.txt` and
-`saas_policy_strong.txt` with the same policy name and open
-`/compare/<after-id>/<before-id>` — you'll see 34 closed, 0 opened, -80.6 risk
-delta.
-
-## API
-
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/api/scan` | multipart: `file`, `frameworks` (CSV), optional `policy_name` |
-| `GET`  | `/api/scans` | last 50 scans; `?policy_name=...` filters by policy |
-| `GET`  | `/api/scans/{id}` | full scan detail |
-| `GET`  | `/api/scans/{id}/versions` | other scans of the same policy (oldest first) |
-| `GET`  | `/api/scans/{id}/compare/{other_id}` | classified diff: closed/opened/regressed/improved |
-| `GET`  | `/api/regulations` | available frameworks + rule counts |
-| `GET`  | `/api/health` | liveness |
+1. Import the repo, set the **root directory** to `frontend/`.
+2. Set `NEXT_PUBLIC_API_BASE` to your Fly URL (e.g. `https://your-app.fly.dev/api`).
+3. Deploy.
 
 ---
 
@@ -202,52 +249,49 @@ delta.
 ```
 backend/
   app/
-    main.py              FastAPI app + CORS + DB init
-    config.py            pydantic-settings
-    db.py                SQLAlchemy async, single Scan table
-    api/
-      scan.py            POST /scan
-      scans.py           GET /scans, /scans/{id}, /scans/{id}/versions, /scans/{id}/compare/{other_id}
-      regulations.py     GET /regulations
+    main.py               FastAPI + CORS + DB init
+    api/                  scan, scans, regulations
     core/
-      parser.py          PDF/DOCX/TXT → text
-      pii.py             regex + Luhn
-      rules.py           load YAML, evaluate (requires_any / requires_all)
-      scoring.py         severity-weighted 0-100
-      diff.py            classify finding changes between two scans
-      claude_client.py   Sonnet 4.6, prompt cache, structured tool output
-      pipeline.py        glue
-    rules/
-      hipaa.yaml         10 rules + PHI-leak guard
-      gdpr.yaml          10 rules + PII-leak guard
-      pci_dss.yaml       10 rules + PAN-leak guard
-      soc2.yaml          10 rules
-  fixtures/
-    clinic_policy_weak.txt   demo: should score ~100 (critical)
-    saas_policy_strong.txt   demo: should score ~20 (moderate)
-  tests/
-    test_pipeline.py     5 deterministic tests, no API calls
+      parser.py           PDF/DOCX/TXT → text
+      pii.py              regex + Luhn
+      rules.py            YAML loader, evaluator
+      scoring.py          severity-weighted 0-100
+      diff.py             two-scan comparison
+      agent.py            multi-turn agent loop, transcript capture
+      agent_tools.py      6 tool definitions + dispatch
+      pipeline.py         glue
+    rules/                hipaa.yaml, gdpr.yaml, pci_dss.yaml, soc2.yaml
+  evals/
+    cases.yaml            8 labeled mini-policies
+    run.py                P/R/F1 harness, JSON output, CI-gated
+  fixtures/               clinic_policy_weak.txt, saas_policy_strong.txt
+  tests/                  17 tests covering rules, scoring, diff, agent loop
+  Dockerfile, fly.toml
 
 frontend/
   app/
-    page.tsx                       upload + frameworks + policy name
-    scan/[id]/page.tsx             risk gauge + grouped findings + version picker
-    scans/page.tsx                 history table
-    compare/[after]/[before]/      side-by-side diff page
+    page.tsx                          upload + frameworks + policy_name
+    scan/[id]/page.tsx                risk gauge + findings + AgentTranscript
+    scans/page.tsx                    history
+    compare/[after]/[before]/         side-by-side diff
   components/
-    UploadForm.tsx       drag-and-drop, framework toggles, policy name
-    RiskGauge.tsx        conic-gradient ring
-    VersionPicker.tsx    "compare with" widget on scan detail
-    FindingCard.tsx
-    SeverityPill.tsx
-  lib/api.ts             typed fetch helpers
+    UploadForm.tsx, RiskGauge.tsx, FindingCard.tsx, SeverityPill.tsx
+    VersionPicker.tsx                 prior-versions widget
+    AgentTranscript.tsx               turn-by-turn agent panel
+  Dockerfile, vercel.json
+
+docker-compose.yml
+run.sh                                one-step launcher
+scripts/demo.sh                       reproducible offline demo
+.github/workflows/ci.yml              pytest + frontend build + eval gate
 ```
 
 ---
 
-## Adding a new regulation
+## Adding a regulation
 
-Drop a YAML file in `backend/app/rules/` following this shape:
+Drop a YAML file in `backend/app/rules/` matching the existing shape.
+`load_frameworks()` discovers it at runtime — no code changes, no rebuild.
 
 ```yaml
 framework: ISO27001
@@ -263,25 +307,18 @@ rules:
 forbidden_in_doc: []
 ```
 
-No code change needed — `load_frameworks()` discovers files at runtime and the
-frontend picks up the new option from `/api/regulations`.
-
----
-
-## Testing
-
-```bash
-cd backend && .venv/bin/python -m pytest tests/ -q
-```
-
-5 tests, ~0.2s, no network. Claude is force-disabled in tests for determinism.
-
 ---
 
 ## What it isn't
 
-- **Not legal advice.** This is a tool for triage, not a substitute for counsel.
-- **Not a replacement for an audit.** Useful for catching obvious gaps before
-  a real auditor arrives — and for tracking improvement over time.
+- **Not legal advice.** A tool for triage, not a substitute for counsel.
+- **Not a replacement for an audit.** Useful for catching obvious gaps and
+  tracking improvement over time.
 - **Not OCR-ed.** Scanned PDFs without a text layer extract no text. Add
   Tesseract or AWS Textract if your inputs are scans.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).

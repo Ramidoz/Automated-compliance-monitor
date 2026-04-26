@@ -35,6 +35,11 @@ def _row_to_detail(r: Scan) -> dict:
         "summary": r.summary,
         "findings": r.findings,
         "document_excerpt": r.document_excerpt,
+        "agent_transcript": r.agent_transcript or [],
+        "agent_iterations": r.agent_iterations or 0,
+        "input_tokens": r.input_tokens or 0,
+        "output_tokens": r.output_tokens or 0,
+        "cached_tokens": r.cached_tokens or 0,
     }
 
 

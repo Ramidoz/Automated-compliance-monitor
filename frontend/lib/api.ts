@@ -15,6 +15,14 @@ export interface Finding {
   source: "rules" | "claude";
 }
 
+export type TranscriptKind = "thinking" | "text" | "tool_use" | "tool_result";
+
+export interface TranscriptStep {
+  iteration: number;
+  kind: TranscriptKind;
+  content: Record<string, any>;
+}
+
 export interface ScanResponse {
   id: number;
   created_at: string;
@@ -28,6 +36,11 @@ export interface ScanResponse {
   used_claude?: boolean;
   cache_hit?: boolean;
   document_excerpt?: string;
+  agent_transcript?: TranscriptStep[];
+  agent_iterations?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  cached_tokens?: number;
 }
 
 export interface ScanListItem {

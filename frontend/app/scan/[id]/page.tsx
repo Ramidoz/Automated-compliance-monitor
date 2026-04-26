@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AgentTranscript } from "@/components/AgentTranscript";
 import { FindingCard } from "@/components/FindingCard";
 import { RiskGauge } from "@/components/RiskGauge";
 import { VersionPicker } from "@/components/VersionPicker";
@@ -79,6 +80,8 @@ export default async function ScanPage({ params }: { params: { id: string } }) {
           <p className="text-sm text-ink-800">{scan.summary}</p>
         </section>
       )}
+
+      <AgentTranscript scan={scan} />
 
       {Object.entries(grouped).map(([framework, findings]) => {
         const fwFailed = findings.filter((f) => ["missing", "violation", "weak", "contradiction"].includes(f.status));

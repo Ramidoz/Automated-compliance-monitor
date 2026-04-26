@@ -1,0 +1,143 @@
+# Labeled eval cases for the rules engine.
+#
+# Each case is a short policy snippet with the EXHAUSTIVE set of rule_ids the
+# rules engine should flag as failing (status in {missing, violation}). Rules
+# not listed are expected to pass.
+#
+# Run:  ./run.sh eval
+#
+# Add new cases by appending here. When adding, run the harness once with a
+# loose label set, then refine ``expected_failing`` until precision is 1.0
+# for an honest baseline.
+
+cases:
+  - name: hipaa_full_pass
+    frameworks: [HIPAA]
+    text: |
+      Notice of Privacy Practices is provided to all patients on intake.
+      We notify affected individuals of any breach without unreasonable delay
+      and in any case no later than 60 days after discovery.
+      A Business Associate Agreement (BAA) is executed with all vendors that
+      handle PHI on our behalf.
+      We follow the minimum necessary standard for all PHI access.
+      Patients have the right to access their health information within 30 days.
+      Encryption: AES-256 at rest and TLS 1.2+ in transit.
+      Audit logs are maintained and reviewed.
+      Annual workforce training is mandatory for all staff.
+      A formal risk assessment is performed annually.
+      The Privacy Officer can be reached at privacy@clinic.example.
+      The Security Officer is also designated.
+    expected_failing: []
+
+  - name: hipaa_missing_baa
+    frameworks: [HIPAA]
+    text: |
+      Notice of Privacy Practices is provided.
+      Breach notification: without unreasonable delay and no later than 60 days.
+      We follow the minimum necessary standard.
+      Patients have the right to access their health information.
+      Encryption: AES-256 at rest and TLS in transit.
+      Audit trail is maintained.
+      Annual workforce training is required.
+      Risk assessment is performed annually.
+      Privacy Officer: privacy@clinic.example.
+      Security Officer also designated.
+    expected_failing:
+      - HIPAA-003   # BAA not mentioned
+
+  - name: hipaa_pii_leak
+    frameworks: [HIPAA]
+    text: |
+      Notice of Privacy Practices is provided.
+      Breach notification within 60 days, without unreasonable delay.
+      Business Associate Agreement (BAA) executed.
+      Sample patient SSN: 123-45-6789.
+      Minimum necessary standard followed.
+      Patients have the right to access PHI.
+      AES-256 encryption at rest and TLS in transit.
+      Audit log review weekly.
+      Annual training and risk assessment.
+      Privacy Officer designated.
+    expected_failing:
+      - HIPAA-PII-001   # SSN appears in policy text
+
+  - name: gdpr_full_pass
+    frameworks: [GDPR]
+    text: |
+      Lawful basis for processing: contract and legitimate interest.
+      Data subject rights honored: right to access, right to erasure (right to
+      be forgotten), right to rectification, and right to data portability.
+      DPO contact: dpo@example.org.
+      International transfers: governed by Standard Contractual Clauses (SCCs).
+      Retention: data is kept for 12 months then purged. Records of Processing
+      Activities are maintained.
+      Breach notification: within 72 hours to the supervisory authority.
+      Privacy by design and by default is operationalized.
+      Withdraw consent at any time via the unsubscribe link.
+      Children's data: parental consent is required for users under 16.
+    expected_failing:
+      - GDPR-PII-001  # contains an email address
+
+  - name: gdpr_vague_consent
+    frameworks: [GDPR]
+    text: |
+      Lawful basis: consent.
+      Data subject rights: access, erasure, rectification, portability.
+      DPO contact: dpo@helios.example.
+      International transfers via SCCs.
+      Data retention period: 24 months.
+      Privacy by design followed.
+      Records of Processing Activities maintained.
+      Children's data: parental consent for under 16.
+      Breach notification within 72 hours.
+    expected_failing:
+      - GDPR-002      # rights listed without "right to" prefix — incomplete
+      - GDPR-009      # nothing about withdrawing consent
+      - GDPR-PII-001  # contains an email address
+
+  - name: pci_pan_unprotected
+    frameworks: [PCI_DSS]
+    text: |
+      We store cardholder data in our database.
+      Information security policy reviewed annually.
+      MFA required for admin access.
+      Quarterly vulnerability scans by an ASV.
+      Annual penetration testing.
+      Audit logs reviewed daily.
+      Critical patches applied within 30 days.
+      Incident response plan maintained.
+      Network segmentation via VLANs.
+      Cardholder data environment scope is documented.
+    expected_failing:
+      - PCI-002   # never says PAN is encrypted/tokenized
+
+  - name: soc2_no_change_management
+    frameworks: [SOC2]
+    text: |
+      Role-based access control with least privilege.
+      Incident response is documented and tested.
+      Backups are taken daily and recovery is tested with a 4-hour RTO.
+      Continuous monitoring via SIEM.
+      Annual risk assessment populates a risk register.
+      Annual security awareness training at onboarding.
+      AES-256 at rest, TLS in transit.
+      System description is published.
+      Vendor risk reviews are conducted annually.
+    expected_failing:
+      - SOC2-002   # no change management
+
+  - name: empty_doc
+    frameworks: [HIPAA]
+    text: |
+      This space intentionally left blank.
+    expected_failing:
+      - HIPAA-001
+      - HIPAA-002
+      - HIPAA-003
+      - HIPAA-004
+      - HIPAA-005
+      - HIPAA-006
+      - HIPAA-007
+      - HIPAA-008
+      - HIPAA-009
+      - HIPAA-010

@@ -26,21 +26,37 @@ class Scan(Base):
     summary: Mapped[str] = mapped_column(Text, default="")
     findings: Mapped[list] = mapped_column(JSON)
     document_excerpt: Mapped[str] = mapped_column(Text, default="")
+    agent_transcript: Mapped[list] = mapped_column(JSON, default=list)
+    agent_iterations: Mapped[int] = mapped_column(Integer, default=0)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cached_tokens: Mapped[int] = mapped_column(Integer, default=0)
 
 
 _engine = create_async_engine(get_settings().database_url, future=True)
 SessionLocal = async_sessionmaker(_engine, expire_on_commit=False, class_=AsyncSession)
 
 
+_MIGRATIONS = [
+    # SQLite has no ADD COLUMN IF NOT EXISTS, so we catch the duplicate-column
+    # OperationalError. This keeps existing demo databases usable across upgrades.
+    "ALTER TABLE scans ADD COLUMN policy_name VARCHAR(256) DEFAULT ''",
+    "ALTER TABLE scans ADD COLUMN agent_transcript JSON DEFAULT '[]'",
+    "ALTER TABLE scans ADD COLUMN agent_iterations INTEGER DEFAULT 0",
+    "ALTER TABLE scans ADD COLUMN input_tokens INTEGER DEFAULT 0",
+    "ALTER TABLE scans ADD COLUMN output_tokens INTEGER DEFAULT 0",
+    "ALTER TABLE scans ADD COLUMN cached_tokens INTEGER DEFAULT 0",
+]
+
+
 async def init_db() -> None:
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Idempotent migration: add policy_name to pre-existing tables.
-        # SQLite has no ADD COLUMN IF NOT EXISTS, so we catch the duplicate-column error.
-        try:
-            await conn.execute(text("ALTER TABLE scans ADD COLUMN policy_name VARCHAR(256) DEFAULT ''"))
-        except OperationalError:
-            pass
+        for stmt in _MIGRATIONS:
+            try:
+                await conn.execute(text(stmt))
+            except OperationalError:
+                pass
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:

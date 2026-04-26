@@ -54,8 +54,11 @@ rules:
       - "retention period"
       - "data retention"
       - "retention schedule"
+      - "retention policy"
       - "stored for"
       - "kept for"
+      - "retain for"
+      - "retained for"
     citation: GDPR Art. 5(1)(e)
     remediation: Define retention periods per data category and the criteria used to determine them.
 

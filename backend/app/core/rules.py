@@ -61,7 +61,13 @@ def load_frameworks() -> dict[str, FrameworkSpec]:
 
 
 def _phrase_present(text_lower: str, phrase: str) -> str | None:
-    pattern = re.compile(r"\b" + re.escape(phrase.lower()) + r"\b")
+    # Allow common English suffixes (plural -s/-es, gerund -ing, past -ed) on
+    # the FINAL word of the phrase only. This matches "audit log" against
+    # "audit logs" / "audit logging" without matching unrelated words like
+    # "audit logger" (the suffix list is closed).
+    pattern = re.compile(
+        r"\b" + re.escape(phrase.lower()) + r"(?:s|es|ing|ed)?\b"
+    )
     match = pattern.search(text_lower)
     if not match:
         return None
