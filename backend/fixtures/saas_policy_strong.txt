@@ -1,0 +1,117 @@
+Helios Analytics — Privacy and Security Policy
+Version 4.2 — Reviewed annually (Jan 2024)
+
+1. Scope and System Description
+Helios Analytics provides a hosted analytics platform. This policy covers our
+production cardholder data environment (CDE), our customer-facing services, and
+all subprocessors. Service boundaries and data flows are documented in our
+Trust Center.
+
+2. Lawful basis for processing (GDPR Art. 6)
+We process customer personal data on the legal basis of (a) the contract with
+the data controller and (b) our legitimate interest in operating the platform
+securely. For marketing, we rely on consent, which can be withdrawn at any time
+via the unsubscribe link in any email.
+
+3. Data subject rights (GDPR Art. 15-20)
+Data subjects may exercise their right to access, right to rectification, right
+to erasure (right to be forgotten), right to data portability, and right to
+object. Requests are answered within 30 days. Contact our Data Protection
+Officer at dpo@helios.example.
+
+4. International transfers
+Transfers outside the EEA are governed by the EU Standard Contractual Clauses
+(SCCs, 2021/914), supplemented by encryption in transit and at rest.
+
+5. Retention
+Customer logs are retained for 13 months and then purged. Account data is
+retained for the duration of the subscription and for 90 days after termination.
+A retention schedule is maintained as part of our Record of Processing
+Activities (ROPA, GDPR Art. 30).
+
+6. Breach notification
+We notify the supervisory authority within 72 hours of becoming aware of a
+personal data breach (GDPR Art. 33). Affected individuals are notified without
+unreasonable delay and no later than 60 days after discovery (HIPAA 45 CFR
+164.404 for any covered PHI).
+
+7. HIPAA — Covered services
+For customers in the U.S. healthcare sector, Helios executes a Business
+Associate Agreement (BAA) before any PHI is transmitted. Our Notice of Privacy
+Practices is available on the Trust Center. We follow the minimum necessary
+standard for PHI access. Patients have the right to access their health
+information within 30 days of request.
+
+8. Encryption
+All cardholder data (PAN) and PHI is rendered unreadable using AES-256 at rest
+and TLS 1.2+ (HTTPS) in transit. Card numbers are tokenized before storage; the
+PAN never touches application logs.
+
+9. Network segmentation
+The cardholder data environment is segmented from out-of-scope systems via
+isolated VLANs and host-based firewalls.
+
+10. Multi-factor authentication
+MFA is required for all administrative access and all access into the CDE
+(PCI-DSS Req. 8.4).
+
+11. Patch management
+Critical security patches are applied within 30 days of release. Other patches
+follow a monthly cadence (PCI-DSS Req. 6.3.3).
+
+12. Vulnerability scans and penetration testing
+Internal and external vulnerability scans are performed quarterly by an
+Approved Scanning Vendor (PCI-DSS Req. 11.3). External penetration tests are
+conducted annually and after significant changes (Req. 11.4).
+
+13. Audit logging
+All CDE systems forward audit logs to a centralized SIEM. Logs are reviewed
+daily by our security operations team (PCI-DSS Req. 10).
+
+14. Risk assessment
+We perform a formal risk assessment annually and after significant changes.
+Findings feed our risk register (TSC CC3.1 / 45 CFR 164.308).
+
+15. Workforce training
+All employees complete security awareness training at onboarding and annually
+thereafter (TSC CC1.4 / 45 CFR 164.308(a)(5)).
+
+16. Incident response
+We maintain a documented incident response plan (PCI-DSS Req. 12.10 / TSC
+CC7.3) that is tested annually.
+
+17. Vendor risk management
+Subservice organizations undergo a security review prior to onboarding and
+annually thereafter (TSC CC9.2).
+
+18. Backups and recovery
+Customer data is backed up daily, encrypted, and stored in a secondary region.
+Recovery procedures are tested quarterly with documented RTO of 4 hours and
+RPO of 1 hour (TSC A1.2).
+
+19. Access control
+Role-based access control (RBAC) follows the principle of least privilege
+(TSC CC6.1).
+
+20. Continuous monitoring
+Security events are continuously monitored via our SIEM, with 24/7 on-call
+coverage (TSC CC7.2).
+
+21. Change management
+Changes to production systems require peer review, automated testing, and
+documented approval (TSC CC8.1).
+
+22. Privacy by design and default
+We implement data minimization, pseudonymization where feasible, and default
+privacy-respecting configurations (GDPR Art. 25).
+
+23. Officers
+Our Privacy Officer and Security Officer can be reached at
+privacy@helios.example and security@helios.example respectively.
+
+24. Children's data
+The Helios platform is not intended for children under 16. We do not knowingly
+collect data from minors without parental consent.
+
+25. Information security policy review
+This policy is reviewed annually and updated as required (PCI-DSS Req. 12.1.1).

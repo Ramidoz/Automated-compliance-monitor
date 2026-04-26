@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  background: #f7f7f8;
+  color: #0f1014;
+}
+
+.glow-ring {
+  background: conic-gradient(from 0deg, #16a34a 0%, #ca8a04 35%, #ea580c 65%, #dc2626 100%);
+}

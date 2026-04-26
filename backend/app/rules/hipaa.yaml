@@ -1,0 +1,108 @@
+framework: HIPAA
+display_name: HIPAA (US Healthcare)
+description: U.S. Health Insurance Portability and Accountability Act - Privacy and Security rules for Protected Health Information (PHI).
+rules:
+  - id: HIPAA-001
+    title: Notice of Privacy Practices
+    severity: high
+    requires_any:
+      - "Notice of Privacy Practices"
+      - "NPP"
+      - "privacy practices notice"
+    citation: 45 CFR 164.520
+    remediation: Add a Notice of Privacy Practices section describing how PHI is used and disclosed, patient rights, and the covered entity's duties.
+
+  - id: HIPAA-002
+    title: Breach Notification Timeline (60 days)
+    severity: high
+    requires_all:
+      - any: ["breach notification", "breach notice", "notify affected individuals"]
+      - any: ["60 days", "sixty days", "without unreasonable delay"]
+    citation: 45 CFR 164.404
+    remediation: State that breach notifications will be made without unreasonable delay and no later than 60 calendar days after discovery.
+
+  - id: HIPAA-003
+    title: Business Associate Agreement
+    severity: high
+    requires_any:
+      - "Business Associate Agreement"
+      - "BAA"
+      - "business associate contract"
+    citation: 45 CFR 164.504(e)
+    remediation: Reference the requirement for Business Associate Agreements (BAAs) with all third parties that handle PHI on your behalf.
+
+  - id: HIPAA-004
+    title: Minimum Necessary Standard
+    severity: medium
+    requires_any:
+      - "minimum necessary"
+      - "least privilege"
+      - "need to know"
+    citation: 45 CFR 164.502(b)
+    remediation: Document the minimum-necessary standard for PHI access, use, and disclosure.
+
+  - id: HIPAA-005
+    title: Patient Right to Access PHI
+    severity: medium
+    requires_any:
+      - "right to access"
+      - "right to inspect"
+      - "request access to their"
+      - "access their health information"
+    citation: 45 CFR 164.524
+    remediation: Document the patient's right to access, inspect, and obtain a copy of their PHI within 30 days of request.
+
+  - id: HIPAA-006
+    title: Encryption of PHI at Rest and in Transit
+    severity: high
+    requires_all:
+      - any: ["encrypt", "encryption", "AES"]
+      - any: ["at rest", "in transit", "TLS", "HTTPS"]
+    citation: 45 CFR 164.312(a)(2)(iv)
+    remediation: Specify encryption controls (e.g., AES-256 at rest, TLS 1.2+ in transit) for all PHI.
+
+  - id: HIPAA-007
+    title: Audit Controls and Logging
+    severity: medium
+    requires_any:
+      - "audit log"
+      - "audit trail"
+      - "access log"
+      - "audit controls"
+    citation: 45 CFR 164.312(b)
+    remediation: Describe audit controls that record and examine activity in systems containing PHI.
+
+  - id: HIPAA-008
+    title: Workforce Training
+    severity: medium
+    requires_any:
+      - "workforce training"
+      - "security awareness training"
+      - "HIPAA training"
+      - "annual training"
+    citation: 45 CFR 164.308(a)(5)
+    remediation: Document mandatory and recurring HIPAA security and privacy training for the workforce.
+
+  - id: HIPAA-009
+    title: Risk Assessment
+    severity: high
+    requires_any:
+      - "risk assessment"
+      - "risk analysis"
+    citation: 45 CFR 164.308(a)(1)(ii)(A)
+    remediation: Document an ongoing process for conducting risk assessments of PHI confidentiality, integrity, and availability.
+
+  - id: HIPAA-010
+    title: Designated Privacy and Security Officer
+    severity: medium
+    requires_all:
+      - any: ["Privacy Officer", "Security Officer", "Privacy Official", "Security Official"]
+    citation: 45 CFR 164.308(a)(2), 164.530(a)
+    remediation: Name (or designate by role) a Privacy Officer and a Security Officer responsible for HIPAA compliance.
+
+forbidden_in_doc:
+  - id: HIPAA-PII-001
+    title: PHI/PII appears in the policy document itself
+    severity: critical
+    pii_kinds: ["us_ssn", "credit_card", "date_of_birth"]
+    remediation: Policy documents must not contain real PHI/PII. Replace with placeholders or remove.

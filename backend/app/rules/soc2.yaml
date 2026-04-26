@@ -1,0 +1,103 @@
+framework: SOC2
+display_name: SOC 2 (Trust Services Criteria)
+description: AICPA Trust Services Criteria covering Security, Availability, Confidentiality, Processing Integrity, and Privacy.
+rules:
+  - id: SOC2-001
+    title: Logical Access Controls
+    severity: high
+    requires_all:
+      - any: ["access control", "logical access", "role-based access", "RBAC"]
+      - any: ["least privilege", "need to know", "minimum necessary"]
+    citation: TSC CC6.1
+    remediation: Document role-based access controls and the principle of least privilege.
+
+  - id: SOC2-002
+    title: Change Management
+    severity: medium
+    requires_any:
+      - "change management"
+      - "change control"
+      - "change approval"
+    citation: TSC CC8.1
+    remediation: Document a change management process covering review, approval, and testing of changes.
+
+  - id: SOC2-003
+    title: Vendor / Subservice Risk Management
+    severity: medium
+    requires_any:
+      - "vendor management"
+      - "third-party risk"
+      - "vendor risk"
+      - "subservice organization"
+    citation: TSC CC9.2
+    remediation: Document a vendor risk-management program including security reviews of third parties.
+
+  - id: SOC2-004
+    title: Incident Response
+    severity: high
+    requires_any:
+      - "incident response"
+      - "incident management"
+      - "security incident"
+    citation: TSC CC7.3
+    remediation: Maintain and test a formal incident response plan with defined roles and notification procedures.
+
+  - id: SOC2-005
+    title: Backup and Recovery
+    severity: medium
+    requires_all:
+      - any: ["backup", "back up"]
+      - any: ["recovery", "restore", "RTO", "RPO"]
+    citation: TSC A1.2
+    remediation: Document backup frequency, retention, encryption, and recovery testing (RTO/RPO).
+
+  - id: SOC2-006
+    title: Continuous Monitoring
+    severity: medium
+    requires_any:
+      - "continuous monitoring"
+      - "security monitoring"
+      - "SIEM"
+      - "log monitoring"
+    citation: TSC CC7.2
+    remediation: Describe continuous monitoring (e.g., SIEM, alerting) of security events.
+
+  - id: SOC2-007
+    title: Risk Assessment Process
+    severity: high
+    requires_any:
+      - "risk assessment"
+      - "risk analysis"
+      - "risk register"
+    citation: TSC CC3.1
+    remediation: Document an annual (at minimum) risk assessment process with a risk register.
+
+  - id: SOC2-008
+    title: Security Awareness Training
+    severity: medium
+    requires_all:
+      - any: ["security awareness", "security training"]
+      - any: ["annual", "annually", "onboarding", "every year"]
+    citation: TSC CC1.4
+    remediation: Document mandatory security awareness training at hire and at least annually thereafter.
+
+  - id: SOC2-009
+    title: Data Encryption at Rest and in Transit
+    severity: high
+    requires_all:
+      - any: ["encrypt", "encryption", "AES"]
+      - any: ["at rest", "in transit", "TLS", "HTTPS"]
+    citation: TSC CC6.7
+    remediation: Document encryption controls for data at rest and in transit.
+
+  - id: SOC2-010
+    title: System Description / Service Boundaries
+    severity: low
+    requires_any:
+      - "system description"
+      - "service boundaries"
+      - "scope of services"
+    citation: TSC DC2
+    remediation: Maintain a written system description covering services, infrastructure, software, people, and data.
+
+forbidden_in_doc: []

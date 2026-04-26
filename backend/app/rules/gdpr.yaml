@@ -1,0 +1,119 @@
+framework: GDPR
+display_name: GDPR (EU)
+description: EU General Data Protection Regulation - Rights of data subjects and obligations on data controllers and processors.
+rules:
+  - id: GDPR-001
+    title: Lawful Basis for Processing
+    severity: high
+    requires_any:
+      - "lawful basis"
+      - "legal basis"
+      - "legitimate interest"
+      - "consent"
+      - "Article 6"
+    citation: GDPR Art. 6
+    remediation: Identify and document the lawful basis (consent, contract, legal obligation, vital interest, public task, or legitimate interest) for each processing activity.
+
+  - id: GDPR-002
+    title: Data Subject Rights
+    severity: high
+    requires_all:
+      - any: ["right to access", "right of access"]
+      - any: ["right to erasure", "right to be forgotten", "right to deletion"]
+      - any: ["right to rectification", "right to correct", "right to correction"]
+      - any: ["right to data portability", "data portability"]
+    citation: GDPR Art. 15-20
+    remediation: Describe how data subjects can exercise their rights to access, rectification, erasure, and data portability, and the response timeline (1 month).
+
+  - id: GDPR-003
+    title: Data Protection Officer (DPO) Contact
+    severity: medium
+    requires_any:
+      - "Data Protection Officer"
+      - "DPO"
+      - "dpo@"
+    citation: GDPR Art. 37-39
+    remediation: Provide DPO contact details if processing requires one (large-scale special-category data, public authority, or systematic monitoring).
+
+  - id: GDPR-004
+    title: International Data Transfer Mechanism
+    severity: high
+    requires_any:
+      - "Standard Contractual Clauses"
+      - "SCCs"
+      - "adequacy decision"
+      - "Binding Corporate Rules"
+      - "BCR"
+    citation: GDPR Art. 44-49
+    remediation: Specify the safeguard for transfers outside the EEA (SCCs, adequacy decision, or BCRs).
+
+  - id: GDPR-005
+    title: Data Retention Period
+    severity: medium
+    requires_any:
+      - "retention period"
+      - "data retention"
+      - "retention schedule"
+      - "stored for"
+      - "kept for"
+    citation: GDPR Art. 5(1)(e)
+    remediation: Define retention periods per data category and the criteria used to determine them.
+
+  - id: GDPR-006
+    title: Breach Notification Timeline (72 hours)
+    severity: high
+    requires_all:
+      - any: ["breach notification", "data breach"]
+      - any: ["72 hours", "seventy-two hours"]
+    citation: GDPR Art. 33
+    remediation: Commit to notifying the supervisory authority within 72 hours of becoming aware of a personal data breach.
+
+  - id: GDPR-007
+    title: Records of Processing Activities
+    severity: medium
+    requires_any:
+      - "Record of Processing Activities"
+      - "ROPA"
+      - "records of processing"
+      - "processing register"
+    citation: GDPR Art. 30
+    remediation: Maintain a Record of Processing Activities (ROPA) describing categories of data subjects, data, recipients, and retention.
+
+  - id: GDPR-008
+    title: Privacy by Design and Default
+    severity: medium
+    requires_any:
+      - "privacy by design"
+      - "privacy by default"
+      - "data protection by design"
+    citation: GDPR Art. 25
+    remediation: State the commitment to privacy by design and by default, and describe how it is operationalized.
+
+  - id: GDPR-009
+    title: Consent Withdrawal
+    severity: medium
+    requires_any:
+      - "withdraw consent"
+      - "withdraw your consent"
+      - "revoke consent"
+      - "opt out"
+    citation: GDPR Art. 7(3)
+    remediation: Make clear that consent can be withdrawn as easily as it is given.
+
+  - id: GDPR-010
+    title: Children's Data (Article 8)
+    severity: low
+    requires_any:
+      - "children"
+      - "minors"
+      - "under 16"
+      - "parental consent"
+    citation: GDPR Art. 8
+    remediation: Describe age verification and parental consent procedures if services are offered to children.
+
+forbidden_in_doc:
+  - id: GDPR-PII-001
+    title: Personal data appears in the policy document itself
+    severity: high
+    pii_kinds: ["email", "phone_us", "iban", "us_ssn"]
+    remediation: Remove real personal data examples from the policy. Use placeholders.

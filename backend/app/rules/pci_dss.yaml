@@ -1,0 +1,108 @@
+framework: PCI_DSS
+display_name: PCI-DSS v4.0 (Payments)
+description: Payment Card Industry Data Security Standard - Requirements for any entity that stores, processes, or transmits cardholder data.
+rules:
+  - id: PCI-001
+    title: Cardholder Data Scope Defined
+    severity: high
+    requires_any:
+      - "cardholder data environment"
+      - "CDE"
+      - "scope of cardholder data"
+      - "PAN handling"
+    citation: PCI-DSS Req. 12.5.2
+    remediation: Document the scope of the Cardholder Data Environment (CDE), including all systems that store, process, or transmit cardholder data.
+
+  - id: PCI-002
+    title: PAN Encryption / Tokenization
+    severity: critical
+    requires_all:
+      - any: ["PAN", "Primary Account Number", "cardholder data"]
+      - any: ["encrypt", "tokenize", "tokenization", "AES", "strong cryptography"]
+    citation: PCI-DSS Req. 3.5
+    remediation: Render PANs unreadable using strong cryptography (e.g., AES-256), hashing, or tokenization.
+
+  - id: PCI-003
+    title: Network Segmentation
+    severity: high
+    requires_any:
+      - "network segmentation"
+      - "segmented network"
+      - "isolated network"
+      - "VLAN"
+    citation: PCI-DSS Req. 1
+    remediation: Document network segmentation that isolates the CDE from out-of-scope systems.
+
+  - id: PCI-004
+    title: Vulnerability Scanning
+    severity: high
+    requires_all:
+      - any: ["vulnerability scan", "vulnerability scanning", "ASV scan"]
+      - any: ["quarterly", "every 3 months", "every three months"]
+    citation: PCI-DSS Req. 11.3
+    remediation: Perform internal and external vulnerability scans at least quarterly and after significant changes.
+
+  - id: PCI-005
+    title: Penetration Testing
+    severity: medium
+    requires_all:
+      - any: ["penetration test", "pen test", "pentest"]
+      - any: ["annually", "annual", "yearly", "every 12 months"]
+    citation: PCI-DSS Req. 11.4
+    remediation: Conduct internal and external penetration tests at least annually and after major changes.
+
+  - id: PCI-006
+    title: Audit Logging and Daily Review
+    severity: high
+    requires_all:
+      - any: ["audit log", "audit trail", "log review"]
+      - any: ["daily", "every day", "24 hours"]
+    citation: PCI-DSS Req. 10
+    remediation: Implement audit logs for all CDE systems and review them at least daily.
+
+  - id: PCI-007
+    title: Multi-Factor Authentication
+    severity: critical
+    requires_any:
+      - "multi-factor authentication"
+      - "multifactor authentication"
+      - "MFA"
+      - "two-factor authentication"
+      - "2FA"
+    citation: PCI-DSS Req. 8.4
+    remediation: Require MFA for all access into the CDE and all administrative access.
+
+  - id: PCI-008
+    title: Patch Management (Critical Patches within 30 days)
+    severity: high
+    requires_all:
+      - any: ["patch", "patching", "security patches"]
+      - any: ["30 days", "thirty days", "one month"]
+    citation: PCI-DSS Req. 6.3.3
+    remediation: Apply critical security patches within 30 days of release.
+
+  - id: PCI-009
+    title: Incident Response Plan
+    severity: high
+    requires_any:
+      - "incident response plan"
+      - "IRP"
+      - "security incident response"
+    citation: PCI-DSS Req. 12.10
+    remediation: Maintain and test an incident response plan covering payment-card incidents.
+
+  - id: PCI-010
+    title: Annual Information Security Policy Review
+    severity: medium
+    requires_all:
+      - any: ["information security policy", "security policy"]
+      - any: ["reviewed annually", "annual review", "at least annually", "yearly"]
+    citation: PCI-DSS Req. 12.1.1
+    remediation: Review and update the information security policy at least annually.
+
+forbidden_in_doc:
+  - id: PCI-PII-001
+    title: Card data present in the policy document itself
+    severity: critical
+    pii_kinds: ["credit_card"]
+    remediation: Remove all card numbers from the document immediately and rotate any exposed cards.
