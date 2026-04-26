@@ -6,13 +6,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Backwards-compat alias: existing components use `ink-*`. Mapping it
-        // onto the canonical `surface` scale keeps one source of truth in
-        // design-tokens.ts.
-        ink: tokens.colors.surface,
+        ink: tokens.colors.cartoon,
         surface: tokens.colors.surface,
         risk: tokens.colors.risk,
         accent: tokens.colors.accent,
+        cartoon: tokens.colors.cartoon,
+        tool: tokens.colors.tool,
       },
       borderRadius: tokens.radius,
       fontFamily: tokens.typography.fontFamily,
@@ -26,6 +25,13 @@ export default {
       transitionTimingFunction: {
         standard: tokens.motion.easings.standard,
         emphasized: tokens.motion.easings.emphasized,
+      },
+      boxShadow: {
+        "stick-sm": "1.5px 2px 0 var(--c-ink)",
+        "stick-md": "2px 3px 0 var(--c-ink)",
+        "stick-card": "0 2px 0 rgba(42,31,85,0.05), 0 8px 24px rgba(42,31,85,0.04)",
+        sticker:
+          "0 2px 0 rgba(42,31,85,0.10), 0 6px 14px rgba(42,31,85,0.12)",
       },
     },
   },
