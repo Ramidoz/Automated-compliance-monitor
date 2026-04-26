@@ -1,0 +1,41 @@
+# Fly.io manifest for the FastAPI backend.
+# After `fly launch --no-deploy --copy-config` (which creates the app), run:
+#   fly secrets set ANTHROPIC_API_KEY=sk-ant-...
+#   fly volumes create compliance_data --region iad --size 1
+#   fly deploy
+# Then point the frontend at https://<your-app>.fly.dev via NEXT_PUBLIC_API_BASE.
+
+app = "compliance-monitor-backend"   # change to your app name
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  USE_CLAUDE = "true"
+  ANTHROPIC_MODEL = "claude-sonnet-4-6"
+  USE_THINKING = "false"
+  DATABASE_URL = "sqlite+aiosqlite:////data/compliance.db"
+  # ALLOW_ORIGINS is overridden via `fly secrets set ALLOW_ORIGINS=https://your-frontend.vercel.app`
+
+[[mounts]]
+  source = "compliance_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

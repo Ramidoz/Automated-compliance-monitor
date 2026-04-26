@@ -1,0 +1,33 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      USE_CLAUDE: ${USE_CLAUDE:-false}
+      USE_THINKING: ${USE_THINKING:-false}
+      THINKING_BUDGET_TOKENS: ${THINKING_BUDGET_TOKENS:-2000}
+      DATABASE_URL: sqlite+aiosqlite:////data/compliance.db
+      ALLOW_ORIGINS: http://localhost:3000
+    volumes:
+      - backend-data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/health',timeout=3).status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      BACKEND_URL: http://backend:8000
+
+volumes:
+  backend-data:

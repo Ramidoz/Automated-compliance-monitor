@@ -44,7 +44,30 @@ saas_policy_strong.txt    risk= 19.4  label=moderate    8 failed of 41
 
 ## Quickstart
 
-### 1. Backend
+### Fastest path: docker-compose
+
+```bash
+# (optional) export ANTHROPIC_API_KEY=sk-ant-... USE_CLAUDE=true
+docker compose up --build
+# frontend: http://localhost:3000   backend: http://localhost:8000/api/health
+```
+
+### 30-second demo (no API key needed)
+
+```bash
+./scripts/demo.sh   # boots backend, scans both fixtures, writes demo/results/*.json
+```
+
+Produces:
+
+| Fixture | Risk | Label | Findings | Failed |
+|---|---:|---|---:|---:|
+| `weak.json` | 100.0 | critical | 42 | 42 |
+| `strong.json` | 19.4 | moderate | 41 | 8 |
+
+Use `demo/results/*.json` as static portfolio artifacts.
+
+### 1. Backend (manual)
 
 ```bash
 cd backend
@@ -56,7 +79,7 @@ uvicorn app.main:app --reload --port 8000
 
 The first request creates `compliance.db` (SQLite). Hit `http://localhost:8000/api/health`.
 
-### 2. Frontend
+### 2. Frontend (manual)
 
 ```bash
 cd frontend
@@ -101,6 +124,44 @@ once.
 
 Flip `USE_THINKING=true` if you want the model to deliberate harder; it's
 implemented and tested, just off by default.
+
+---
+
+## Deploy
+
+Recommended split: **Vercel** for the frontend, **Fly.io** for the backend
+(SQLite + persistent volume).
+
+### Backend → Fly.io
+
+```bash
+cd backend
+fly launch --no-deploy --copy-config              # creates the app, keeps fly.toml
+fly volumes create compliance_data --region iad --size 1
+fly secrets set ANTHROPIC_API_KEY=sk-ant-...      \
+                ALLOW_ORIGINS=https://your-frontend.vercel.app
+fly deploy
+```
+
+The included `fly.toml` mounts a 1 GB volume at `/data` so the SQLite DB
+persists across restarts, scales to zero when idle, and runs HTTPS-only
+health checks against `/api/health`.
+
+### Frontend → Vercel
+
+1. Import the repo on Vercel and set the **root directory** to `frontend/`.
+2. Set the env var `NEXT_PUBLIC_API_BASE` to your Fly URL, e.g.
+   `https://compliance-monitor-backend.fly.dev/api`.
+3. Deploy. `lib/api.ts` reads `NEXT_PUBLIC_API_BASE` at build time and
+   calls the backend directly — the `next.config.mjs` rewrites are only
+   used in dev.
+
+### Anywhere with Docker
+
+Both services have multi-stage Dockerfiles producing slim runtime images
+(~150 MB backend, ~180 MB frontend with Next.js standalone output).
+`docker compose up` from the repo root starts both with healthcheck-gated
+startup ordering.
 
 ---
 
