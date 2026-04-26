@@ -1,12 +1,16 @@
+import logging
 from datetime import datetime
+from pathlib import Path
 from typing import AsyncIterator
 
-from sqlalchemy import JSON, DateTime, Float, Integer, String, Text, text
+from sqlalchemy import JSON, DateTime, Float, Integer, String, Text, func, select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from .config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -62,3 +66,60 @@ async def init_db() -> None:
 async def get_session() -> AsyncIterator[AsyncSession]:
     async with SessionLocal() as session:
         yield session
+
+
+_DEMO_FIXTURES = [
+    ("clinic_policy_weak.txt", "Demo Policy"),
+    ("saas_policy_strong.txt", "Demo Policy"),
+]
+
+
+async def seed_demo_data() -> None:
+    """Idempotent demo seed. When DEMO_MODE=true, on first boot:
+    parse each fixture, run the pipeline (rules + agent if enabled),
+    and persist a Scan row. Skips if the table already has rows so
+    repeated boots don't duplicate data.
+    """
+    # Lazy imports break a circular dependency: pipeline imports rules
+    # which doesn't depend on db, but the agent imports config which
+    # imports settings which is also imported here at module load.
+    from .core.parser import extract_text
+    from .core.pipeline import run as run_pipeline
+
+    fixtures_dir = Path(__file__).resolve().parent.parent / "fixtures"
+    if not fixtures_dir.exists():
+        logger.warning("seed: fixtures directory not found at %s", fixtures_dir)
+        return
+
+    async with SessionLocal() as session:
+        existing = (await session.execute(select(func.count(Scan.id)))).scalar_one()
+        if existing > 0:
+            logger.info("seed: %d scans already present, skipping", existing)
+            return
+
+        for filename, policy_name in _DEMO_FIXTURES:
+            path = fixtures_dir / filename
+            if not path.exists():
+                logger.warning("seed: fixture %s missing", filename)
+                continue
+            doc_text = extract_text(filename, path.read_bytes())
+            result = run_pipeline(doc_text, ["HIPAA", "GDPR", "PCI_DSS", "SOC2"])
+            session.add(
+                Scan(
+                    filename=filename,
+                    policy_name=policy_name,
+                    frameworks=["HIPAA", "GDPR", "PCI_DSS", "SOC2"],
+                    risk_score=result.risk_score,
+                    risk_label=result.risk_label,
+                    summary=result.summary,
+                    findings=[f.to_dict() for f in result.findings],
+                    document_excerpt=doc_text[:4000],
+                    agent_transcript=result.transcript,
+                    agent_iterations=result.iterations,
+                    input_tokens=result.input_tokens,
+                    output_tokens=result.output_tokens,
+                    cached_tokens=result.cached_tokens,
+                )
+            )
+        await session.commit()
+        logger.info("seed: inserted %d demo scans", len(_DEMO_FIXTURES))

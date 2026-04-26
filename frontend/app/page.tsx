@@ -1,3 +1,4 @@
+import { DemoCallout } from "@/components/DemoCallout";
 import { UploadForm } from "@/components/UploadForm";
 
 export default function HomePage() {
@@ -11,6 +12,9 @@ export default function HomePage() {
           Upload a privacy policy, BAA, or security write-up. We score it against HIPAA, GDPR,
           PCI-DSS, and SOC 2, flag missing clauses, and suggest specific fixes.
         </p>
+        <div className="mt-5">
+          <DemoCallout />
+        </div>
 
         <ul className="mt-8 space-y-4 text-sm text-ink-600">
           <li className="flex gap-3">

@@ -86,6 +86,12 @@ export interface Regulation {
   rule_count: number;
 }
 
+export interface PublicConfig {
+  demo_mode: boolean;
+  use_claude: boolean;
+  model: string | null;
+}
+
 async function jsonOrThrow<T>(res: Response): Promise<T> {
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
@@ -133,4 +139,8 @@ export async function getScan(id: number | string): Promise<ScanResponse> {
 
 export async function listRegulations(): Promise<Regulation[]> {
   return jsonOrThrow(await fetch(`${API_BASE}/regulations`, { cache: "no-store" }));
+}
+
+export async function getConfig(): Promise<PublicConfig> {
+  return jsonOrThrow(await fetch(`${API_BASE}/config`, { cache: "no-store" }));
 }

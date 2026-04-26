@@ -1,28 +1,31 @@
 import type { Config } from "tailwindcss";
+import { tokens } from "./lib/design-tokens";
 
 export default {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: {
-          50: "#f7f7f8",
-          100: "#eeeef0",
-          200: "#d6d7db",
-          400: "#8b8d96",
-          600: "#4b4e58",
-          800: "#1f2128",
-          900: "#0f1014",
-        },
-        risk: {
-          low: "#16a34a",
-          moderate: "#ca8a04",
-          high: "#ea580c",
-          critical: "#dc2626",
-        },
+        // Backwards-compat alias: existing components use `ink-*`. Mapping it
+        // onto the canonical `surface` scale keeps one source of truth in
+        // design-tokens.ts.
+        ink: tokens.colors.surface,
+        surface: tokens.colors.surface,
+        risk: tokens.colors.risk,
+        accent: tokens.colors.accent,
       },
-      fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+      borderRadius: tokens.radius,
+      fontFamily: tokens.typography.fontFamily,
+      fontSize: tokens.typography.fontSize,
+      letterSpacing: tokens.typography.letterSpacing,
+      transitionDuration: {
+        fast: tokens.motion.durations.fast,
+        base: tokens.motion.durations.base,
+        slow: tokens.motion.durations.slow,
+      },
+      transitionTimingFunction: {
+        standard: tokens.motion.easings.standard,
+        emphasized: tokens.motion.easings.emphasized,
       },
     },
   },

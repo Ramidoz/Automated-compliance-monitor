@@ -169,7 +169,7 @@ Demo delta on the bundled fixtures (offline, agent disabled):
 
 ```
 clinic_policy_weak.txt    risk=100.0  label=critical   42 failed of 42
-saas_policy_strong.txt    risk= 19.4  label=moderate    8 failed of 41
+saas_policy_strong.txt    risk=  9.0  label=low         3 failed of 41
 ```
 
 ---
@@ -223,24 +223,40 @@ delta, and tinted count cards.
 
 ## Deploy
 
-Recommended split: **Vercel** for the frontend, **Fly.io** for the backend
-(SQLite + persistent volume).
+Frontend on Vercel, backend on Fly.io. **Set `DEMO_MODE=true` on the backend**
+so visitors land on populated screens instead of an empty upload form.
 
-### Backend → Fly.io
+Full walkthrough: [DEPLOY.md](DEPLOY.md). One-liner version:
 
 ```bash
+# Backend
 cd backend
 fly launch --no-deploy --copy-config
 fly volumes create compliance_data --region iad --size 1
-fly secrets set ANTHROPIC_API_KEY=sk-ant-... ALLOW_ORIGINS=https://your-frontend.vercel.app
+fly secrets set ANTHROPIC_API_KEY=sk-ant-... USE_CLAUDE=true DEMO_MODE=true \
+                ALLOW_ORIGINS=https://<your-vercel-domain>
 fly deploy
+
+# Frontend → Vercel: import repo, root = frontend/, set
+# NEXT_PUBLIC_API_BASE=https://<your-fly>.fly.dev/api, deploy.
 ```
 
-### Frontend → Vercel
+## UI workflow
 
-1. Import the repo, set the **root directory** to `frontend/`.
-2. Set `NEXT_PUBLIC_API_BASE` to your Fly URL (e.g. `https://your-app.fly.dev/api`).
-3. Deploy.
+The visual layer is generated via **Claude Design** (Anthropic's prototyping
+product, launched April 2026), not hand-coded.
+
+1. Open Claude Design and feed it the GitHub repo (or a `./run.sh` URL via
+   web capture).
+2. Point it at [CLAUDE.md](CLAUDE.md) and [frontend/DESIGN.md](frontend/DESIGN.md)
+   — those carry the brand voice and screen-by-screen intent.
+3. Iterate on the canvas, then **Export → Send to Claude Code Web**.
+4. Paste the resulting command into a Claude Code session targeting this
+   repo. The handoff bundle (tokens, component spec, layout, assets) drops
+   into `frontend/lib/design-tokens.ts` and the affected component files.
+
+Design-token source of truth: `frontend/lib/design-tokens.ts`. Reach for
+those in components, never raw hex.
 
 ---
 

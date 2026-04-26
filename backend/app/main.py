@@ -7,12 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api import regulations, scan, scans
 from .config import get_settings
-from .db import init_db
+from .db import init_db, seed_demo_data
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await init_db()
+    if get_settings().demo_mode:
+        await seed_demo_data()
     yield
 
 
@@ -40,3 +42,14 @@ app.include_router(regulations.router, prefix="/api", tags=["regulations"])
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/api/config")
+def public_config():
+    """Public, non-secret config the frontend needs at runtime."""
+    s = get_settings()
+    return {
+        "demo_mode": s.demo_mode,
+        "use_claude": s.use_claude,
+        "model": s.anthropic_model if s.use_claude else None,
+    }

@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     use_thinking: bool = False
     thinking_budget_tokens: int = 2000
     allow_origins: str = "http://localhost:3000"
+    demo_mode: bool = False
 
     @property
     def cors_origins(self) -> list[str]:
