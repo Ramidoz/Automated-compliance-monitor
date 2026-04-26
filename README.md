@@ -165,13 +165,33 @@ startup ordering.
 
 ---
 
+## Diff over time
+
+Scans share a `policy_name` (auto-derived from the filename, or set manually
+on upload) so you can re-scan a document and see what changed:
+
+- **closed** — was failing, now passing
+- **opened** — was passing, now failing (regression)
+- **regressed** — still failing, severity got worse
+- **improved** — still failing, severity got better
+- **still_failing** — failing in both scans
+- **still_passing** — passing in both scans
+
+The compare page shows side-by-side evidence per finding, the risk-score delta,
+and section counts. Try it: scan `clinic_policy_weak.txt` and
+`saas_policy_strong.txt` with the same policy name and open
+`/compare/<after-id>/<before-id>` — you'll see 34 closed, 0 opened, -80.6 risk
+delta.
+
 ## API
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/api/scan` | multipart upload (`file` + `frameworks` CSV); returns full `ScanResponse` |
-| `GET`  | `/api/scans` | last 50 scans (summary rows) |
+| `POST` | `/api/scan` | multipart: `file`, `frameworks` (CSV), optional `policy_name` |
+| `GET`  | `/api/scans` | last 50 scans; `?policy_name=...` filters by policy |
 | `GET`  | `/api/scans/{id}` | full scan detail |
+| `GET`  | `/api/scans/{id}/versions` | other scans of the same policy (oldest first) |
+| `GET`  | `/api/scans/{id}/compare/{other_id}` | classified diff: closed/opened/regressed/improved |
 | `GET`  | `/api/regulations` | available frameworks + rule counts |
 | `GET`  | `/api/health` | liveness |
 
@@ -187,13 +207,14 @@ backend/
     db.py                SQLAlchemy async, single Scan table
     api/
       scan.py            POST /scan
-      scans.py           GET /scans, /scans/{id}
+      scans.py           GET /scans, /scans/{id}, /scans/{id}/versions, /scans/{id}/compare/{other_id}
       regulations.py     GET /regulations
     core/
       parser.py          PDF/DOCX/TXT → text
       pii.py             regex + Luhn
       rules.py           load YAML, evaluate (requires_any / requires_all)
       scoring.py         severity-weighted 0-100
+      diff.py            classify finding changes between two scans
       claude_client.py   Sonnet 4.6, prompt cache, structured tool output
       pipeline.py        glue
     rules/
@@ -209,12 +230,14 @@ backend/
 
 frontend/
   app/
-    page.tsx             upload + frameworks
-    scan/[id]/page.tsx   risk gauge + grouped findings
-    scans/page.tsx       history table
+    page.tsx                       upload + frameworks + policy name
+    scan/[id]/page.tsx             risk gauge + grouped findings + version picker
+    scans/page.tsx                 history table
+    compare/[after]/[before]/      side-by-side diff page
   components/
-    UploadForm.tsx       drag-and-drop, framework toggles
+    UploadForm.tsx       drag-and-drop, framework toggles, policy name
     RiskGauge.tsx        conic-gradient ring
+    VersionPicker.tsx    "compare with" widget on scan detail
     FindingCard.tsx
     SeverityPill.tsx
   lib/api.ts             typed fetch helpers

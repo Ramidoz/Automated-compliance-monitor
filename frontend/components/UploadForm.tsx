@@ -11,6 +11,7 @@ export function UploadForm() {
   const [regs, setRegs] = useState<Regulation[]>([]);
   const [selected, setSelected] = useState<string[]>(DEFAULT_FRAMEWORKS);
   const [file, setFile] = useState<File | null>(null);
+  const [policyName, setPolicyName] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [drag, setDrag] = useState(false);
@@ -35,7 +36,7 @@ export function UploadForm() {
     setBusy(true);
     setErr(null);
     try {
-      const result = await uploadScan(file, selected);
+      const result = await uploadScan(file, selected, policyName);
       router.push(`/scan/${result.id}`);
     } catch (e: any) {
       setErr(e?.message ?? "Scan failed.");
@@ -80,6 +81,19 @@ export function UploadForm() {
           </>
         )}
       </label>
+
+      <div>
+        <label className="mb-2 block text-sm font-medium text-ink-900">
+          Policy name <span className="font-normal text-ink-400">(optional — groups versions for diffing)</span>
+        </label>
+        <input
+          type="text"
+          value={policyName}
+          onChange={(e) => setPolicyName(e.target.value)}
+          placeholder="e.g. Acme Corp Privacy Policy"
+          className="w-full rounded-md border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:border-ink-900 focus:outline-none"
+        />
+      </div>
 
       <div>
         <div className="mb-2 text-sm font-medium text-ink-900">Frameworks</div>

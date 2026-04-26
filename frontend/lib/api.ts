@@ -19,6 +19,7 @@ export interface ScanResponse {
   id: number;
   created_at: string;
   filename: string;
+  policy_name?: string;
   frameworks: string[];
   risk_score: number;
   risk_label: "low" | "moderate" | "high" | "critical" | "unknown";
@@ -33,10 +34,36 @@ export interface ScanListItem {
   id: number;
   created_at: string;
   filename: string;
+  policy_name?: string;
   frameworks: string[];
   risk_score: number;
   risk_label: string;
   finding_count: number;
+}
+
+export type DiffChange =
+  | "closed"
+  | "opened"
+  | "regressed"
+  | "improved"
+  | "still_failing"
+  | "still_passing";
+
+export interface DiffEntry {
+  framework: string;
+  rule_id: string;
+  title: string;
+  change: DiffChange;
+  before: Finding | null;
+  after: Finding | null;
+}
+
+export interface DiffResponse {
+  before: ScanListItem;
+  after: ScanListItem;
+  risk_score_delta: number;
+  entries: DiffEntry[];
+  counts: Record<DiffChange, number>;
 }
 
 export interface Regulation {
@@ -58,11 +85,29 @@ async function jsonOrThrow<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-export async function uploadScan(file: File, frameworks: string[]): Promise<ScanResponse> {
+export async function uploadScan(
+  file: File,
+  frameworks: string[],
+  policyName: string = "",
+): Promise<ScanResponse> {
   const fd = new FormData();
   fd.append("file", file);
   fd.append("frameworks", frameworks.join(","));
+  if (policyName) fd.append("policy_name", policyName);
   return jsonOrThrow(await fetch(`${API_BASE}/scan`, { method: "POST", body: fd }));
+}
+
+export async function listVersions(id: number | string): Promise<ScanListItem[]> {
+  return jsonOrThrow(await fetch(`${API_BASE}/scans/${id}/versions`, { cache: "no-store" }));
+}
+
+export async function compareScans(
+  afterId: number | string,
+  beforeId: number | string,
+): Promise<DiffResponse> {
+  return jsonOrThrow(
+    await fetch(`${API_BASE}/scans/${afterId}/compare/${beforeId}`, { cache: "no-store" }),
+  );
 }
 
 export async function listScans(): Promise<ScanListItem[]> {

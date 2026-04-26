@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,10 +15,19 @@ router = APIRouter()
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
 
+def _derive_policy_name(filename: str | None, override: str) -> str:
+    if override.strip():
+        return override.strip()[:256]
+    if not filename:
+        return "Untitled"
+    return Path(filename).stem[:256] or "Untitled"
+
+
 @router.post("/scan")
 async def scan(
     file: UploadFile = File(...),
     frameworks: str = Form("HIPAA,GDPR,PCI_DSS,SOC2"),
+    policy_name: str = Form(""),
     session: AsyncSession = Depends(get_session),
 ):
     data = await file.read()
@@ -46,6 +57,7 @@ async def scan(
 
     scan_row = Scan(
         filename=file.filename or "upload",
+        policy_name=_derive_policy_name(file.filename, policy_name),
         frameworks=selected,
         risk_score=result.risk_score,
         risk_label=result.risk_label,
@@ -61,6 +73,7 @@ async def scan(
         "id": scan_row.id,
         "created_at": scan_row.created_at.isoformat(),
         "filename": scan_row.filename,
+        "policy_name": scan_row.policy_name,
         "frameworks": scan_row.frameworks,
         "risk_score": result.risk_score,
         "risk_label": result.risk_label,

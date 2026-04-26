@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { FindingCard } from "@/components/FindingCard";
 import { RiskGauge } from "@/components/RiskGauge";
+import { VersionPicker } from "@/components/VersionPicker";
 import { getScan, type Finding } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -51,9 +52,12 @@ export default async function ScanPage({ params }: { params: { id: string } }) {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink-900">{scan.filename}</h1>
         <p className="mt-1 text-xs text-ink-400">
+          {scan.policy_name && <span className="mr-2 rounded bg-ink-100 px-1.5 py-0.5 text-ink-600">{scan.policy_name}</span>}
           Scanned {new Date(scan.created_at).toLocaleString()} · {scan.frameworks.join(", ")}
         </p>
       </div>
+
+      <VersionPicker scanId={scan.id} />
 
       <section className="grid gap-6 rounded-2xl border border-ink-200 bg-white p-6 shadow-sm md:grid-cols-[auto_1fr]">
         <RiskGauge score={scan.risk_score} label={scan.risk_label} />
