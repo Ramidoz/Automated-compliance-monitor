@@ -2,15 +2,406 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+ * Design tokens — mirrored from the Claude Design handoff (tokens.css +
+ * cartoon.css). Tailwind also reads the values via tailwind.config.ts;
+ * these CSS variables exist so hand-written CSS in this file (and any
+ * future component-scoped styles) can reach for them too.
+ * ------------------------------------------------------------------------- */
 :root {
+  --surface-50: #fbfbfd;
+  --surface-100: #f5f5f7;
+  --surface-200: #e5e5ea;
+  --surface-300: #c7c7cc;
+  --surface-400: #86868b;
+  --surface-600: #515154;
+  --surface-800: #2c2c2e;
+  --surface-900: #1d1d1f;
+
+  --risk-low: #6cc28a;
+  --risk-moderate: #e6c674;
+  --risk-high: #f0a575;
+  --risk-critical: #e88a8a;
+
+  --accent-ai-50: #ede9fe;
+  --accent-ai-100: #d8ccf5;
+  --accent-ai-300: #b8a5e3;
+  --accent-ai-500: #9b86c9;
+  --accent-ai-700: #6e5ba0;
+  --accent-cache-500: #7ab592;
+  --accent-cache-700: #4f8a6a;
+
+  --tool-rules-bg: #faf5ff;
+  --tool-rules-fg: #6b21a8;
+  --tool-doc-bg: #eff6ff;
+  --tool-doc-fg: #1d4ed8;
+  --tool-output-bg: #ecfdf5;
+  --tool-output-fg: #047857;
+  --tool-terminal-bg: #fffbeb;
+  --tool-terminal-fg: #b45309;
+
+  /* Cartoon overlay */
+  --c-ink: #2a1f55;
+  --c-ink-soft: #5b517f;
+  --tint-lavender: #efeaff;
+  --tint-lavender-deep: #c8b6f5;
+  --tint-butter: #fff4d4;
+  --tint-butter-deep: #f0c462;
+  --tint-sage: #e3f3df;
+  --tint-sage-deep: #84c08a;
+  --tint-peach: #ffe5d4;
+  --tint-peach-deep: #f0a575;
+  --tint-rose: #ffdedf;
+  --tint-rose-deep: #e88a8a;
+  --tint-sky: #d8edff;
+  --tint-sky-deep: #5fa9e0;
+
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+
+  --c-shadow-stick:
+    0 1px 0 rgba(42, 31, 85, 0.05),
+    0 4px 0 rgba(42, 31, 85, 0.06),
+    0 12px 28px rgba(42, 31, 85, 0.1);
+  --c-shadow-sticker:
+    0 2px 0 rgba(42, 31, 85, 0.1),
+    0 6px 14px rgba(42, 31, 85, 0.12);
+
   color-scheme: light;
 }
 
-html, body {
-  background: #f7f7f8;
-  color: #0f1014;
+html,
+body {
+  background: var(--surface-50);
+  color: var(--c-ink);
 }
 
-.glow-ring {
-  background: conic-gradient(from 0deg, #16a34a 0%, #ca8a04 35%, #ea580c 65%, #dc2626 100%);
+/* Soft pastel page glow behind the dashboard. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -40px -40px auto -40px;
+  height: 520px;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(200, 182, 245, 0.42), transparent 38%),
+    radial-gradient(circle at 88% 4%, rgba(240, 196, 98, 0.28), transparent 42%),
+    radial-gradient(circle at 60% 100%, rgba(132, 192, 138, 0.22), transparent 50%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Typographic primitives — used directly in components alongside Tailwind
+ * utility classes for shared, hard-to-express type styles.
+ * ------------------------------------------------------------------------- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-ink-soft);
+}
+
+.script {
+  font-family: var(--font-caveat), cursive;
+  font-weight: 700;
+  color: var(--accent-ai-700);
+}
+
+/* ---------------------------------------------------------------------------
+ * Animations
+ * ------------------------------------------------------------------------- */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(132, 192, 138, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(132, 192, 138, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(132, 192, 138, 0);
+  }
+}
+@keyframes pulse-ai {
+  0% {
+    box-shadow: 0 0 0 0 rgba(155, 134, 201, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(155, 134, 201, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(155, 134, 201, 0);
+  }
+}
+@keyframes halo-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes mascot-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  94%,
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+@keyframes orbit-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-6px) rotate(20deg);
+  }
+}
+@keyframes scan-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes stream-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Cards — base "stuck on the wall" primitive shared across the app
+ * ------------------------------------------------------------------------- */
+.card {
+  background: #ffffff;
+  border: 1.5px solid rgba(42, 31, 85, 0.08);
+  border-radius: 22px;
+  box-shadow: var(--c-shadow-stick);
+  padding: 20px;
+}
+.card-pad-lg {
+  padding: 24px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons — sticker-style chunky, with pressed/hover states
+ * ------------------------------------------------------------------------- */
+.btn,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  border-radius: 14px;
+  padding: 10px 18px;
+  transition: transform 150ms var(--ease-standard), box-shadow 150ms var(--ease-standard);
+}
+.btn {
+  background: var(--c-ink);
+  color: #ffffff;
+  border: none;
+  box-shadow: 2px 3px 0 rgba(42, 31, 85, 0.25);
+}
+.btn:hover {
+  background: #1a124a;
+  transform: translateY(-1px);
+  box-shadow: 2px 4px 0 rgba(42, 31, 85, 0.3);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 1px 2px 0 rgba(42, 31, 85, 0.15);
+}
+.btn-ghost {
+  background: #ffffff;
+  color: var(--c-ink);
+  border: 1.5px solid var(--c-ink);
+  box-shadow: 1.5px 2px 0 var(--c-ink);
+}
+.btn-ghost:hover {
+  background: var(--tint-lavender);
+  transform: translate(-1px, -1px);
+  box-shadow: 2.5px 3px 0 var(--c-ink);
+}
+.btn-xs {
+  padding: 4px 10px;
+  font-size: 11.5px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Pills (severity, status, AI, framework, tool-call)
+ * ------------------------------------------------------------------------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1.5px solid var(--c-ink);
+  box-shadow: 1.5px 1.5px 0 var(--c-ink);
+  color: var(--c-ink);
+}
+.pill-low {
+  background: var(--tint-sage);
+}
+.pill-moderate,
+.pill-medium {
+  background: var(--tint-butter);
+}
+.pill-high {
+  background: var(--tint-peach);
+}
+.pill-critical {
+  background: var(--tint-rose);
+}
+
+.status-tag {
+  display: inline-flex;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.status-fail {
+  background: var(--c-ink);
+  color: #ffffff;
+}
+.status-pass {
+  background: rgba(108, 194, 138, 0.18);
+  color: var(--accent-cache-700);
+}
+
+.ai-badge {
+  display: inline-flex;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 700;
+  background: var(--accent-ai-500);
+  color: #ffffff;
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fw-tag-inline {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 600;
+  background: var(--c-ink);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+}
+
+.tool-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+.tool-rules {
+  background: var(--tool-rules-bg);
+  color: var(--tool-rules-fg);
+  border-color: #e9d5ff;
+}
+.tool-doc {
+  background: var(--tool-doc-bg);
+  color: var(--tool-doc-fg);
+  border-color: #bfdbfe;
+}
+.tool-output {
+  background: var(--tool-output-bg);
+  color: var(--tool-output-fg);
+  border-color: #a7f3d0;
+}
+.tool-terminal {
+  background: var(--tool-terminal-bg);
+  color: var(--tool-terminal-fg);
+  border-color: #fde68a;
+}
+
+/* ---------------------------------------------------------------------------
+ * Risk gauge — used on /scan/[id] and the small mini-gauge in /scans
+ * ------------------------------------------------------------------------- */
+.gauge {
+  position: relative;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+.gauge-inner {
+  position: absolute;
+  inset: 8px;
+  background: #ffffff;
+  border-radius: 9999px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.gauge-num {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--c-ink);
+}
+.gauge-label {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-ink-soft);
+}
+
+/* Live pulse used on the dashboard live-job header and "On duty" chip. */
+.live-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-ai-500);
+  animation: pulse-ai 1.6s infinite;
+}
+.duty-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--risk-low);
+  animation: pulse 1.6s infinite;
+}
+
+/* Small focus hint shared across inputs/buttons. */
+:focus-visible {
+  outline: 2px solid var(--accent-ai-500);
+  outline-offset: 2px;
 }
