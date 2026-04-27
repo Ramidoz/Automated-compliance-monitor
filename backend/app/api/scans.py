@@ -48,7 +48,7 @@ async def list_scans(
     policy_name: str | None = Query(None, description="Filter by policy_name (exact match)"),
     session: AsyncSession = Depends(get_session),
 ):
-    stmt = select(Scan).order_by(Scan.created_at.desc()).limit(50)
+    stmt = select(Scan).order_by(Scan.created_at.desc(), Scan.id.desc()).limit(50)
     if policy_name is not None:
         stmt = stmt.where(Scan.policy_name == policy_name)
     rows = (await session.execute(stmt)).scalars().all()
@@ -75,7 +75,7 @@ async def list_versions(scan_id: int, session: AsyncSession = Depends(get_sessio
         await session.execute(
             select(Scan)
             .where(Scan.policy_name == row.policy_name, Scan.id != scan_id)
-            .order_by(Scan.created_at.asc())
+            .order_by(Scan.created_at.asc(), Scan.id.asc())
         )
     ).scalars().all()
     return [_row_to_summary(r) for r in rows]

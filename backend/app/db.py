@@ -37,7 +37,7 @@ class Scan(Base):
     cached_tokens: Mapped[int] = mapped_column(Integer, default=0)
 
 
-_engine = create_async_engine(get_settings().database_url, future=True)
+_engine = create_async_engine(get_settings().sqlalchemy_database_url, future=True)
 SessionLocal = async_sessionmaker(_engine, expire_on_commit=False, class_=AsyncSession)
 
 
@@ -56,6 +56,8 @@ _MIGRATIONS = [
 async def init_db() -> None:
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        if not get_settings().sqlalchemy_database_url.startswith("sqlite"):
+            return
         for stmt in _MIGRATIONS:
             try:
                 await conn.execute(text(stmt))

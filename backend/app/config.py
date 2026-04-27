@@ -18,6 +18,14 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         return [o.strip() for o in self.allow_origins.split(",") if o.strip()]
 
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        if self.database_url.startswith("postgres://"):
+            return "postgresql+asyncpg://" + self.database_url[len("postgres://") :]
+        if self.database_url.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + self.database_url[len("postgresql://") :]
+        return self.database_url
+
 
 @lru_cache
 def get_settings() -> Settings:
