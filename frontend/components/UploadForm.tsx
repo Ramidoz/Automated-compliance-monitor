@@ -1,10 +1,17 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { listRegulations, uploadScan, type Regulation } from "@/lib/api";
 
 const DEFAULT_FRAMEWORKS = ["HIPAA", "GDPR", "PCI_DSS", "SOC2"];
+
+const FW_DESCRIPTIONS: Record<string, string> = {
+  HIPAA: "Privacy + Security rules for PHI",
+  GDPR: "EU data subject rights + breach notice",
+  PCI_DSS: "Cardholder data handling",
+  SOC2: "Trust Services Criteria",
+};
 
 export function UploadForm() {
   const router = useRouter();
@@ -17,11 +24,17 @@ export function UploadForm() {
   const [drag, setDrag] = useState(false);
 
   useEffect(() => {
-    listRegulations().then(setRegs).catch(() => {});
+    listRegulations()
+      .then(setRegs)
+      .catch(() => {
+        /* silent — fall back to defaults */
+      });
   }, []);
 
   const toggle = (fw: string) =>
-    setSelected((cur) => (cur.includes(fw) ? cur.filter((x) => x !== fw) : [...cur, fw]));
+    setSelected((cur) =>
+      cur.includes(fw) ? cur.filter((x) => x !== fw) : [...cur, fw],
+    );
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,8 +58,18 @@ export function UploadForm() {
     }
   }
 
+  const frameworks =
+    regs.length > 0
+      ? regs
+      : DEFAULT_FRAMEWORKS.map((f) => ({
+          framework: f,
+          display_name: f,
+          description: FW_DESCRIPTIONS[f] ?? "",
+          rule_count: 0,
+        }));
+
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form onSubmit={submit} className="upload-side">
       <label
         onDragOver={(e) => {
           e.preventDefault();
@@ -59,88 +82,95 @@ export function UploadForm() {
           const f = e.dataTransfer.files?.[0];
           if (f) setFile(f);
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed bg-white px-6 py-12 text-center transition ${
-          drag ? "border-ink-900 bg-ink-50" : "border-ink-200 hover:border-ink-400"
-        }`}
+        className={`dropzone ${drag ? "drag" : ""}`}
       >
         <input
           type="file"
           accept=".pdf,.docx,.txt,.md"
-          className="hidden"
+          className="sr-only"
+          style={{ position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         />
+        <span className="dropzone-icon" aria-hidden>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 3v5h5M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8l-6-5zM12 18v-6m-3 3l3-3 3 3" />
+          </svg>
+        </span>
         {file ? (
           <>
-            <div className="text-sm font-medium text-ink-900">{file.name}</div>
-            <div className="mt-1 text-xs text-ink-400">{(file.size / 1024).toFixed(1)} KB · click to change</div>
+            <div className="ttl">{file.name}</div>
+            <div className="sub">{(file.size / 1024).toFixed(1)} KB · click to change</div>
           </>
         ) : (
           <>
-            <div className="text-base font-medium text-ink-900">Drop a policy document</div>
-            <div className="mt-1 text-xs text-ink-400">or click to browse · PDF, DOCX, TXT · max 5 MB</div>
+            <div className="ttl">Drop a policy document</div>
+            <div className="sub">PDF, DOCX, or TXT · max 5 MB</div>
           </>
         )}
       </label>
 
-      <div>
-        <label className="mb-2 block text-sm font-medium text-ink-900">
-          Policy name <span className="font-normal text-ink-400">(optional — groups versions for diffing)</span>
-        </label>
-        <input
-          type="text"
-          value={policyName}
-          onChange={(e) => setPolicyName(e.target.value)}
-          placeholder="e.g. Acme Corp Privacy Policy"
-          className="w-full rounded-md border border-ink-200 bg-white px-3 py-2 text-sm text-ink-900 placeholder:text-ink-400 focus:border-ink-900 focus:outline-none"
-        />
-      </div>
-
-      <div>
-        <div className="mb-2 text-sm font-medium text-ink-900">Frameworks</div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {(regs.length ? regs : DEFAULT_FRAMEWORKS.map((f) => ({ framework: f, display_name: f, description: "", rule_count: 0 }))).map(
-            (r) => {
-              const on = selected.includes(r.framework);
-              return (
-                <button
-                  key={r.framework}
-                  type="button"
-                  onClick={() => toggle(r.framework)}
-                  className={`flex items-start gap-3 rounded-lg border p-3 text-left text-sm transition ${
-                    on ? "border-ink-900 bg-ink-900 text-white" : "border-ink-200 bg-white hover:border-ink-400"
-                  }`}
-                >
-                  <span
-                    className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                      on ? "border-white bg-white" : "border-ink-200"
-                    }`}
-                  >
-                    {on && <span className="h-2 w-2 rounded-sm bg-ink-900" />}
-                  </span>
-                  <span>
-                    <span className="font-medium">{r.display_name}</span>
-                    {r.description && (
-                      <span className={`mt-0.5 block text-xs ${on ? "text-white/70" : "text-ink-400"}`}>
-                        {r.description}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              );
-            },
-          )}
+      <div className="flex flex-col gap-2">
+        <span className="eyebrow">Frameworks</span>
+        <div className="fw-grid">
+          {frameworks.map((f) => {
+            const on = selected.includes(f.framework);
+            return (
+              <button
+                key={f.framework}
+                type="button"
+                onClick={() => toggle(f.framework)}
+                className={`fw-toggle ${on ? "on" : ""}`}
+              >
+                <span className="fw-checkbox" aria-hidden />
+                <span>
+                  <span className="fw-name">{f.display_name}</span>
+                  {f.description && <span className="fw-desc">{f.description}</span>}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {err && <div className="rounded-md border border-risk-critical/30 bg-risk-critical/5 p-3 text-sm text-risk-critical">{err}</div>}
+      <div className="flex flex-col gap-2">
+        <span className="eyebrow">
+          Policy name{" "}
+          <span style={{ textTransform: "none", letterSpacing: 0, color: "var(--c-ink-soft)", fontWeight: 400 }}>
+            (optional — groups re-scans for diffing)
+          </span>
+        </span>
+        <input
+          className="input"
+          placeholder="e.g. Westside Clinic — NPP"
+          value={policyName}
+          onChange={(e) => setPolicyName(e.target.value)}
+        />
+      </div>
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="inline-flex items-center justify-center rounded-md bg-ink-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-ink-800 disabled:opacity-50"
-      >
-        {busy ? "Analyzing…" : "Run compliance scan"}
-      </button>
+      {err && (
+        <div
+          style={{
+            background: "var(--tint-rose)",
+            border: "1.5px solid var(--tint-rose-deep)",
+            color: "#8a3a3a",
+            borderRadius: 12,
+            padding: "10px 14px",
+            fontFamily: "var(--font-fredoka), system-ui, sans-serif",
+            fontSize: 13,
+          }}
+        >
+          {err}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <span style={{ fontFamily: "var(--font-fredoka), system-ui, sans-serif", fontSize: 12, color: "var(--c-ink-soft)" }}>
+          Typical scan: <span style={{ fontFamily: "ui-monospace, monospace", color: "var(--c-ink)" }}>5–15 s</span>
+        </span>
+        <button type="submit" className="btn" disabled={busy}>
+          {busy ? "Analyzing…" : "Run scan →"}
+        </button>
+      </div>
     </form>
   );
 }

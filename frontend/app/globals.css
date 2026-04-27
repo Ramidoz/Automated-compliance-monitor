@@ -1705,3 +1705,282 @@ body::before {
   letter-spacing: 0.04em;
   margin-left: auto;
 }
+
+/* ===========================================================================
+ * Upload page (/upload) — dropzone, framework toggles, input, hero
+ * ========================================================================= */
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 460px);
+  gap: 40px;
+}
+@media (max-width: 900px) {
+  .upload-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--tint-lavender-deep);
+  background: linear-gradient(180deg, #fff 0%, #fbf8ff 100%);
+  border-radius: 22px;
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 200ms var(--ease-standard),
+    background 200ms var(--ease-standard), transform 150ms;
+}
+.dropzone:hover {
+  border-color: var(--accent-ai-500);
+  transform: translateY(-1px);
+}
+.dropzone.drag {
+  border-color: var(--c-ink);
+  background: var(--tint-lavender);
+}
+.dropzone .ttl {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--c-ink);
+  margin-top: 12px;
+}
+.dropzone .sub {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--c-ink-soft);
+}
+.dropzone-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--tint-lavender);
+  color: var(--accent-ai-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--tint-lavender-deep);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(42, 31, 85, 0.15);
+  background: #fff;
+  border-radius: 12px;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--c-ink);
+  transition: border-color 150ms;
+}
+.input::placeholder {
+  color: var(--c-ink-soft);
+  opacity: 0.7;
+}
+.input:focus {
+  border-color: var(--accent-ai-500);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(155, 134, 201, 0.18);
+}
+
+.fw-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.fw-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(42, 31, 85, 0.1);
+  background: #fff;
+  border-radius: 14px;
+  text-align: left;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  cursor: pointer;
+  transition: all 150ms var(--ease-standard);
+}
+.fw-toggle:hover {
+  border-color: var(--c-ink);
+  transform: translateY(-1px);
+}
+.fw-toggle.on {
+  border-color: var(--c-ink);
+  background: var(--c-ink);
+  color: #fff;
+  box-shadow: 2px 2px 0 var(--c-ink);
+}
+.fw-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid rgba(42, 31, 85, 0.2);
+  border-radius: 4px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  background: #fff;
+}
+.fw-toggle.on .fw-checkbox {
+  background: #fff;
+  border-color: #fff;
+}
+.fw-toggle.on .fw-checkbox::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: var(--c-ink);
+  border-radius: 2px;
+}
+.fw-name {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+}
+.fw-desc {
+  display: block;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 11.5px;
+  color: var(--c-ink-soft);
+  margin-top: 2px;
+  font-weight: 400;
+}
+.fw-toggle.on .fw-desc {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.upload-hero {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  color: var(--c-ink);
+}
+.upload-hero h1 {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+  margin: 8px 0 0;
+  color: var(--c-ink);
+}
+.upload-hero h1 em {
+  font-family: var(--font-caveat), cursive;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--accent-ai-700);
+  font-size: 1.15em;
+}
+.upload-hero p {
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  margin-top: 12px;
+  font-size: 15px;
+  color: var(--c-ink-soft);
+  max-width: 56ch;
+  line-height: 1.6;
+}
+
+.pipeline {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+@media (max-width: 700px) {
+  .pipeline {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.pipeline-cell {
+  position: relative;
+  border-radius: 16px;
+  border: 1.5px solid rgba(42, 31, 85, 0.08);
+  background: #fff;
+  padding: 12px 14px;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+}
+.pipeline-cell .num {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--c-ink-soft);
+}
+.pipeline-cell .ttl {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.pipeline-cell .desc {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--c-ink-soft);
+  line-height: 1.4;
+}
+.pipeline-cell .dot {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.pipeline-cell.parse .dot {
+  background: var(--tint-sage-deep);
+}
+.pipeline-cell.rules .dot {
+  background: var(--tint-butter-deep);
+}
+.pipeline-cell.agent .dot {
+  background: var(--accent-ai-500);
+}
+.pipeline-cell.score .dot {
+  background: var(--tint-peach-deep);
+}
+
+.bullet-list {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bullet {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-size: 13.5px;
+  color: var(--c-ink-soft);
+  line-height: 1.55;
+}
+.bullet .bdot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.bullet strong {
+  color: var(--c-ink);
+  font-weight: 600;
+}
+.bullet code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  background: var(--surface-100);
+  padding: 1px 5px;
+  border-radius: 4px;
+  color: var(--accent-ai-700);
+}
+
+.upload-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
