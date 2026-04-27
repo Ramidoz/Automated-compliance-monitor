@@ -1,9 +1,16 @@
 # Automated Compliance Monitor
 
-Upload a policy document. A multi-turn **AI agent** (Claude Sonnet 4.6) plus a
-deterministic rules engine score it against **HIPAA**, **GDPR**, **PCI-DSS**,
-and **SOC 2**, flag specific gaps with regulatory citations, suggest fixes,
-and let you re-scan over time to watch findings open and close.
+An autonomous compliance agent for HIPAA, GDPR, PCI-DSS, and SOC 2.
+
+The home page is an **agent control room**: live job stream, triage inbox of
+findings that need a verdict, queue of upcoming work, resolved feed, watched
+sources. Drop in a one-off policy at `/upload` and a multi-turn Claude Sonnet
+4.6 agent reasons over it, citing every tool call. Re-scan a policy to see
+which findings closed, opened, or regressed at `/compare/[a]/[b]`.
+
+UI was generated via **Claude Design** (Anthropic's prototyping product) and
+hand-implemented from the handoff bundle — see [frontend/DESIGN.md](frontend/DESIGN.md)
+and [CLAUDE.md](CLAUDE.md).
 
 > **For data scientists / ML engineers**: this repo is a portfolio-grade
 > demonstration of **(1)** building a Claude tool-using agent loop, **(2)**
