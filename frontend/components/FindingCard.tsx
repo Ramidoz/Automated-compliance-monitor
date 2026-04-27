@@ -1,7 +1,23 @@
+/**
+ * Finding card — one row in the findings list on /scan/[id].
+ *
+ * Severity-coded left rail (via the data-sev attribute consumed in
+ * globals.css), severity pill + framework + rule_id + AI badge in the
+ * head, status tag (Missing / Weak / Present / Violation), evidence
+ * quote, remediation, regulatory citation.
+ */
+
 import type { Finding } from "@/lib/api";
 import { SeverityPill } from "./SeverityPill";
 
-const statusLabels: Record<string, string> = {
+const FW_NAMES: Record<string, string> = {
+  HIPAA: "HIPAA",
+  GDPR: "GDPR",
+  PCI_DSS: "PCI-DSS",
+  SOC2: "SOC 2",
+};
+
+const STATUS_LABELS: Record<string, string> = {
   missing: "Missing",
   present: "Present",
   violation: "Violation",
@@ -9,52 +25,57 @@ const statusLabels: Record<string, string> = {
   contradiction: "Contradiction",
 };
 
+function StatusTag({ status }: { status: string }) {
+  const failing = ["missing", "violation", "weak", "contradiction"].includes(status);
+  return (
+    <span className={`status-tag ${failing ? "status-fail" : "status-pass"}`}>
+      {STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
 export function FindingCard({ finding }: { finding: Finding }) {
-  const isFail = ["missing", "violation", "weak", "contradiction"].includes(finding.status);
+  const passing = finding.status === "present";
   return (
     <div
-      className={`rounded-lg border bg-white p-4 shadow-sm ${
-        isFail ? "border-ink-200" : "border-ink-100 opacity-70"
-      }`}
+      className={`finding ${passing ? "pass" : ""}`}
+      data-sev={finding.severity}
     >
-      <div className="flex items-start justify-between gap-4">
+      <div className="finding-head">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="finding-pill-row">
             <SeverityPill severity={finding.severity} />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-ink-400">
-              {finding.framework} · {finding.rule_id}
+            <span className="finding-rule">
+              {FW_NAMES[finding.framework] ?? finding.framework} · {finding.rule_id}
             </span>
-            {finding.source === "claude" && (
-              <span className="rounded bg-ink-900 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white">
-                AI
-              </span>
-            )}
+            {finding.source === "claude" && <span className="ai-badge">AI</span>}
           </div>
-          <h3 className="mt-1.5 text-sm font-semibold text-ink-900">{finding.title}</h3>
+          <div className="finding-title">{finding.title}</div>
         </div>
-        <span
-          className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider ${
-            isFail ? "bg-ink-900 text-white" : "bg-risk-low/10 text-risk-low"
-          }`}
-        >
-          {statusLabels[finding.status] ?? finding.status}
-        </span>
+        <StatusTag status={finding.status} />
       </div>
-
       {finding.evidence && (
-        <p className="mt-3 line-clamp-3 rounded bg-ink-50 px-3 py-2 text-xs text-ink-600">
-          <span className="text-ink-400">Evidence: </span>
-          {finding.evidence}
-        </p>
+        <div className="finding-evidence">
+          <span className="label">Evidence</span>
+          <span style={{ fontStyle: "italic" }}>“{finding.evidence}”</span>
+        </div>
       )}
-      {isFail && finding.remediation && (
-        <p className="mt-2 text-xs text-ink-600">
-          <span className="text-ink-400">Remediation: </span>
+      {!finding.evidence && finding.status === "missing" && (
+        <div className="finding-evidence">
+          <span className="label">Evidence</span>
+          <span style={{ fontStyle: "italic" }}>
+            No matching language found in the document.
+          </span>
+        </div>
+      )}
+      {finding.remediation && !passing && (
+        <div className="finding-rem">
+          <span className="label">Remediation</span>
           {finding.remediation}
-        </p>
+        </div>
       )}
       {finding.citation && (
-        <p className="mt-2 text-[11px] text-ink-400">{finding.citation}</p>
+        <div className="finding-cite">{finding.citation}</div>
       )}
     </div>
   );

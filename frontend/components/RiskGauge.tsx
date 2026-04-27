@@ -1,40 +1,46 @@
-"use client";
+/**
+ * Risk gauge — the headline visual on /scan/[id].
+ * Conic-gradient ring whose color matches the risk label, with the
+ * numeric score inside.
+ */
 
-const labelColors: Record<string, string> = {
-  low: "text-risk-low",
-  moderate: "text-risk-moderate",
-  high: "text-risk-high",
-  critical: "text-risk-critical",
-  unknown: "text-ink-400",
+const COLORS: Record<string, string> = {
+  low: "var(--risk-low)",
+  moderate: "var(--risk-moderate)",
+  high: "var(--risk-high)",
+  critical: "var(--risk-critical)",
+  unknown: "var(--surface-400)",
 };
 
-export function RiskGauge({ score, label }: { score: number; label: string }) {
+export function RiskGauge({
+  score,
+  label,
+  size = 160,
+}: {
+  score: number;
+  label: string;
+  size?: number;
+}) {
   const clamped = Math.max(0, Math.min(100, score));
-  const angle = (clamped / 100) * 360;
+  const color = COLORS[label] ?? COLORS.unknown;
   return (
-    <div className="flex items-center gap-6">
+    <div
+      className="gauge"
+      style={{
+        width: size,
+        height: size,
+        background: `conic-gradient(${color} ${clamped}%, var(--surface-100) 0)`,
+        transition: "background 800ms cubic-bezier(0.3,0,0,1)",
+      }}
+    >
       <div
-        className="relative h-32 w-32 rounded-full"
-        style={{
-          background: `conic-gradient(${
-            label === "low" ? "#16a34a" : label === "moderate" ? "#ca8a04" : label === "high" ? "#ea580c" : "#dc2626"
-          } ${angle}deg, #eeeef0 ${angle}deg)`,
-        }}
+        className="gauge-inner"
+        style={{ inset: size * 0.07 }}
       >
-        <div className="absolute inset-2 flex flex-col items-center justify-center rounded-full bg-white">
-          <div className="text-3xl font-bold tracking-tight">{clamped.toFixed(0)}</div>
-          <div className="text-xs uppercase tracking-wider text-ink-400">risk</div>
+        <div className="gauge-num" style={{ fontSize: size * 0.27 }}>
+          {Math.round(clamped)}
         </div>
-      </div>
-      <div>
-        <div className={`text-2xl font-semibold capitalize ${labelColors[label] ?? "text-ink-900"}`}>{label}</div>
-        <div className="mt-1 text-sm text-ink-600">
-          {label === "low" && "Strong posture. Minor refinements only."}
-          {label === "moderate" && "Several gaps. Address within the next quarter."}
-          {label === "high" && "Significant exposure. Prioritize fixes now."}
-          {label === "critical" && "Severe gaps. Immediate remediation required."}
-          {label === "unknown" && "Not enough signal to score."}
-        </div>
+        <div className="gauge-label">/ 100 risk</div>
       </div>
     </div>
   );
