@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getConfig } from "@/lib/api";
 
 /**
- * Renders a "View live demo" CTA on the home page when the backend reports
- * demo_mode: true. Mounts as a client component so it can hit /api/config at
- * runtime without forcing the home page out of the static cache.
+ * Header pulse-pill rendered when the backend reports demo_mode: true.
+ * Confirms to visitors that the data they see is seeded — separate from
+ * the in-page CTAs.
  */
 export function DemoCallout() {
   const [demoMode, setDemoMode] = useState<boolean | null>(null);
@@ -29,12 +28,9 @@ export function DemoCallout() {
   if (!demoMode) return null;
 
   return (
-    <Link
-      href="/scans"
-      className="inline-flex items-center gap-2 rounded-md border border-ink-900 bg-ink-900 px-4 py-2 text-sm font-medium text-white transition-colors duration-base hover:bg-ink-800"
-    >
-      View live demo
-      <span aria-hidden className="text-white/80">→</span>
-    </Link>
+    <span className="demo-tag" title="Backend is running in DEMO_MODE — data is seeded.">
+      <span className="pulse" aria-hidden />
+      Demo mode
+    </span>
   );
 }
