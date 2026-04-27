@@ -1,4 +1,23 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "/api";
+/**
+ * API base URL. Three resolution paths:
+ *
+ *   1. Server-side (Node, RSC fetches) — requires an absolute URL. Use
+ *      BACKEND_URL (set in next.config.mjs / docker-compose / Vercel env).
+ *   2. Cross-domain prod — when NEXT_PUBLIC_API_BASE is set, frontend
+ *      hits the backend directly and bypasses the next.config rewrites.
+ *   3. Local dev — relative "/api", proxied by next.config rewrites
+ *      to BACKEND_URL on the server hosting the dev server.
+ */
+function resolveApiBase(): string {
+  if (process.env.NEXT_PUBLIC_API_BASE) return process.env.NEXT_PUBLIC_API_BASE;
+  if (typeof window === "undefined") {
+    const backend = process.env.BACKEND_URL || "http://localhost:8000";
+    return `${backend.replace(/\/$/, "")}/api`;
+  }
+  return "/api";
+}
+
+export const API_BASE = resolveApiBase();
 
 export type Severity = "critical" | "high" | "medium" | "low";
 export type Status = "missing" | "present" | "violation" | "weak" | "contradiction";
